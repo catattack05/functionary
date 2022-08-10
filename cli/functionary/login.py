@@ -15,7 +15,7 @@ def login_cmd(ctx, user, password, host):
     Set the output of this command to the FUNCTIONARY_TOKEN environment variable
     for other functionary commands to use to communicate with the server.
     """
-    login_url = f"{host}/api/token/"
+    login_url = f"{host}/api/v1/api-token-auth"
     success, message = login(login_url, user, password)
 
     # check status code/message on return then exit

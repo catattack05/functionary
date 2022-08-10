@@ -17,12 +17,9 @@ def login(login_url: str, user: str, password: str):
         login_response = requests.post(
             f"{login_url}", data={"username": user, "password": password}
         )
-
         # check status code/message on return then exit
         if login_response.ok:
             tokens = json.loads(login_response.text)
-            tokens["token"] = tokens["access"]
-            tokens["login_url"] = login_url
             saveTokens(tokens)
             success = True
         else:
@@ -48,10 +45,7 @@ def saveTokens(tokens):
 
     tokensFile = functionaryDir / "tokens"
     with tokensFile.open("wt"):
-        tokensFile.write_text(
-            f"token={tokens['token']}\n"
-            f"login_url={tokens['login_url']}"
-        )
+        tokensFile.write_text(f"token={tokens['token']}\n")
 
 
 def getToken():

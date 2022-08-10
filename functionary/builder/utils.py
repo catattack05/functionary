@@ -44,7 +44,7 @@ def extract_package_definition(package_contents: bytes) -> dict:
         tarball.close()
 
     try:
-        package_definition_io = tarball.extractfile("./package.yaml")
+        package_definition_io = tarball.extractfile("package.yaml")
     except KeyError:
         # TODO: Raise custom, useful exception
         close_files()

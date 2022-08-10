@@ -5,6 +5,7 @@ import tarfile
 import click
 import requests
 import yaml
+import os
 
 from .tokens import TokenError, getToken
 
@@ -24,6 +25,11 @@ def generateYaml(output_dir: str, name: str, language: str):
     path = pathlib.Path(output_dir).resolve() / name / f"{name}.yaml"
     with path.open(mode="w"):
         path.write_text(yaml.dump(metadata))
+
+
+def get_environment_id():
+    environment_id = os.environ.get("FUNCTIONARY_ENVIRONMENT")
+    return environment_id
 
 
 @click.group("package")
@@ -82,20 +88,23 @@ def publish(ctx, path, host):
 
     full_path = pathlib.Path(path).resolve()
     tarfile_name = full_path.joinpath(f"{full_path.name}.tar.gz")
-
     with tarfile.open(str(tarfile_name), "w:gz") as tar:
-        tar.add(str(full_path), arcname=".")
+        tar.add(str(full_path), arcname="")
 
     click.echo(f"Publishing {str(tarfile_name)} package to {host}")
 
     # publish should http the tar to a server, wait for return
     upload_file = open(tarfile_name, "rb")
     upload_response = None
-    headers = {"Authorization": f"Bearer {token}"}
-
+    environment_id = get_environment_id()
+    headers = {
+        "Authorization": f"Token {token}",
+        "X-Environment-ID": f"{environment_id}",
+    }
+    publish_url = host + "/api/v1/publish"
     try:
         upload_response = requests.post(
-            host, headers=headers, files={"file": upload_file}
+            publish_url, headers=headers, files={"package_contents": upload_file}
         )
     except requests.ConnectionError:
         click.echo(f"Unable to connect to {host}")
