@@ -7,8 +7,7 @@ import click
 import requests
 import yaml
 
-from .login import get_host, host_error
-from .tokens import get_token, token_error
+from .config import get_config_value
 
 
 def create_languages() -> list[str]:
@@ -79,19 +78,8 @@ def publish(ctx, path):
     Use the -t option to specify a token or set the FUNCTIONARY_TOKEN
     environment variable after logging in to Functionary.
     """
-    try:
-        token = get_token()
-    except token_error as t:
-        click.secho(str(t), err=True, fg="red")
-        click.echo("Error getting token, try login again")
-        ctx.exit(2)
-
-    try:
-        host = get_host()
-    except host_error as h:
-        click.secho(str(h), err=True, fg="red")
-        click.echo("Error finding host name, try login again.")
-        ctx.exit(2)
+    token = get_config_value("host")
+    host = get_config_value("tokens")
 
     full_path = pathlib.Path(path).resolve()
     tarfile_name = full_path.joinpath(f"{full_path.name}.tar.gz")
@@ -114,20 +102,17 @@ def publish(ctx, path):
             publish_url, headers=headers, files={"package_contents": upload_file}
         )
     except requests.ConnectionError:
-        click.echo(f"Unable to connect to {host}")
-        ctx.exit(2)
+        click.ClickException(f"Unable to connect to {host}")
     except requests.Timeout:
-        click.echo("Timeout occurred waiting for build")
-        ctx.exit(2)
+        click.ClickException("Timeout occurred waiting for build")
 
     # check status code/message on return then exit
     if upload_response.ok:
         click.echo("Build succeeded")
     else:
-        click.echo(
+        click.ClickException(
             f"Failed to build image: {upload_response.status_code}\n"
             f"\tResponse: {upload_response.text}"
         )
         if upload_response.status_code == 401:
-            click.echo("\n\nTry log in again.")
-        ctx.exit(1)
+            click.ClickException("\n\nTry log in again.")
