@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import click
 
 from .config import save_config_value

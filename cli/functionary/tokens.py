@@ -18,7 +18,8 @@ def login(login_url: str, user: str, password: str):
             save_config_value("tokens", tokens)
         else:
             click.ClickException(
-                f"Failed to login: {login_response.status_code}\n Response: {login_response.text}"
+                f"Failed to login: {login_response.status_code}\n"
+                + f"Response: {login_response.text}"
             )
     except requests.ConnectionError:
         raise click.ClickException(f"Unable to connect to {login_url}.")
