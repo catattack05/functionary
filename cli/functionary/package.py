@@ -7,7 +7,8 @@ import click
 import requests
 import yaml
 
-from .tokens import TokenError, getToken
+from .login import get_host, host_error
+from .tokens import get_token, token_error
 
 
 def create_languages() -> list[str]:
@@ -68,9 +69,8 @@ def create_cmd(ctx, language, name, output_directory):
 
 @package_cmd.command()
 @click.argument("path", type=click.Path(exists=True))
-@click.argument("host")
 @click.pass_context
-def publish(ctx, path, host):
+def publish(ctx, path):
     """
     Create an archive from the project and publish to the build server.
 
@@ -80,10 +80,17 @@ def publish(ctx, path, host):
     environment variable after logging in to Functionary.
     """
     try:
-        token = getToken()
-    except TokenError as t:
+        token = get_token()
+    except token_error as t:
         click.secho(str(t), err=True, fg="red")
-        click.echo("Try log in again")
+        click.echo("Error getting token, try login again")
+        ctx.exit(2)
+
+    try:
+        host = get_host()
+    except host_error as h:
+        click.secho(str(h), err=True, fg="red")
+        click.echo("Error finding host name, try login again.")
         ctx.exit(2)
 
     full_path = pathlib.Path(path).resolve()

@@ -5,7 +5,7 @@ import requests
 from dotenv import dotenv_values
 
 
-class TokenError(Exception):
+class token_error(Exception):
     pass
 
 
@@ -20,7 +20,7 @@ def login(login_url: str, user: str, password: str):
         # check status code/message on return then exit
         if login_response.ok:
             tokens = json.loads(login_response.text)
-            saveTokens(tokens)
+            save_tokens(tokens)
             success = True
         else:
             message = (
@@ -35,24 +35,22 @@ def login(login_url: str, user: str, password: str):
     return success, message
 
 
-def saveTokens(tokens):
+def save_tokens(tokens):
     if not tokens or len(tokens) == 0:
         raise ValueError("No tokens to save")
 
-    functionaryDir = Path.home() / ".functionary"
-    if not functionaryDir.exists():
-        functionaryDir.mkdir()
+    functionary_dir = Path.home() / ".functionary"
+    if not functionary_dir.exists():
+        functionary_dir.mkdir()
 
-    tokensFile = functionaryDir / "tokens"
-    with tokensFile.open("wt"):
-        tokensFile.write_text(f"token={tokens['token']}\n")
+    config_file = functionary_dir / "config"
+    with config_file.open("wt"):
+        config_file.write_text(f"token={tokens['token']}\n")
 
 
-def getToken():
-    tokensFile = Path.home() / ".functionary" / "tokens"
-
+def get_token():
+    config_file = Path.home() / ".functionary" / "config"
     config = {
-        **dotenv_values(str(tokensFile)),
+        **dotenv_values(str(config_file)),
     }
-
     return config["token"]
