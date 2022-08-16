@@ -37,5 +37,5 @@ def get_config_value(parameter):
         }
         return config[parameter]
     # if path not found or key not found, raise error
-    except KeyError as e:
+    except KeyError:
         raise click.ClickException("Could not find config parameter")
