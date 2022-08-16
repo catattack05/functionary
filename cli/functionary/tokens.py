@@ -17,7 +17,7 @@ def login(login_url: str, user: str, password: str):
             tokens = json.loads(login_response.text)
             save_config_value("tokens", tokens)
         else:
-            click.ClickException(
+            raise click.ClickException(
                 f"Failed to login: {login_response.status_code}\n"
                 + f"Response: {login_response.text}"
             )
