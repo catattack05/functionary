@@ -78,8 +78,8 @@ def publish(ctx, path):
     Use the -t option to specify a token or set the FUNCTIONARY_TOKEN
     environment variable after logging in to Functionary.
     """
-    token = get_config_value("host")
-    host = get_config_value("tokens")
+    token = get_config_value("token")
+    host = get_config_value("host")
 
     full_path = pathlib.Path(path).resolve()
     tarfile_name = full_path.joinpath(f"{full_path.name}.tar.gz")
@@ -102,17 +102,17 @@ def publish(ctx, path):
             publish_url, headers=headers, files={"package_contents": upload_file}
         )
     except requests.ConnectionError:
-        click.ClickException(f"Unable to connect to {host}")
+        raise click.ClickException(f"Unable to connect to {host}")
     except requests.Timeout:
-        click.ClickException("Timeout occurred waiting for build")
+        raise click.ClickException("Timeout occurred waiting for build")
 
     # check status code/message on return then exit
     if upload_response.ok:
         click.echo("Build succeeded")
+    elif upload_response.status_code == 401:
+        raise click.ClickException("\n\nUnauthorized request, try logging in again.")
     else:
-        click.ClickException(
+        raise click.ClickException(
             f"Failed to build image: {upload_response.status_code}\n"
             f"\tResponse: {upload_response.text}"
         )
-        if upload_response.status_code == 401:
-            click.ClickException("\n\nTry log in again.")

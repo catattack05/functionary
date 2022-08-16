@@ -17,7 +17,7 @@ def login_cmd(ctx, user, password, host):
     for other functionary commands to use to communicate with the server.
     """
     login_url = f"{host}/api/v1/api-token-auth"
-    # try to login, click will raise error from inside login if something goes wrong
-    login(login_url, user, password)
+    token = login(login_url, user, password)
     click.echo("Login successful!")
+    save_config_value("token", token)
     save_config_value("host", host)

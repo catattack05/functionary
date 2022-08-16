@@ -3,8 +3,6 @@ import json
 import click
 import requests
 
-from .config import save_config_value
-
 
 def login(login_url: str, user: str, password: str):
 
@@ -14,8 +12,8 @@ def login(login_url: str, user: str, password: str):
         )
         # check status code/message on return then exit
         if login_response.ok:
-            tokens = json.loads(login_response.text)
-            save_config_value("tokens", tokens)
+            token = json.loads(login_response.text).get("token")
+            return token
         else:
             raise click.ClickException(
                 f"Failed to login: {login_response.status_code}\n"
