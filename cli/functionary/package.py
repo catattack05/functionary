@@ -1,4 +1,4 @@
-import os
+import json
 import pathlib
 import shutil
 import tarfile
@@ -25,11 +25,6 @@ def generateYaml(output_dir: str, name: str, language: str):
     path = pathlib.Path(output_dir).resolve() / name / f"{name}.yaml"
     with path.open(mode="w"):
         path.write_text(yaml.dump(metadata))
-
-
-def get_environment_id():
-    environment_id = os.environ.get("FUNCTIONARY_ENVIRONMENT")
-    return environment_id
 
 
 @click.group("package")
@@ -91,7 +86,7 @@ def publish(ctx, path):
     # publish should http the tar to a server, wait for return
     upload_file = open(tarfile_name, "rb")
     upload_response = None
-    environment_id = get_environment_id()
+    environment_id = json.loads(get_config_value("current_environment")).get("id")
     headers = {
         "Authorization": f"Token {token}",
         "X-Environment-ID": f"{environment_id}",
