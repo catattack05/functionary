@@ -10,13 +10,14 @@ def save_config_value(key, value):
     overwrite the current value.
 
     Args:
-        key and value to be stored as strings
+        key: the configuration parameter to set
+        value: the value to set the configutation parameter to
 
     Returns:
-        Nothing
+        None
 
     Raises:
-        ClickException from PermissionError if cannot read config file
+        ClickException: Received a PermissionError when opening config file
     """
     try:
         functionary_dir = Path.home() / ".functionary"
@@ -30,7 +31,7 @@ def save_config_value(key, value):
             value,
         )
     except PermissionError:
-        raise click.ClickException("Config file present, but could not be read")
+        raise click.ClickException(f"Failed to open {config_file}: Permission Denied")
 
 
 def get_config_value(key):
@@ -38,14 +39,14 @@ def get_config_value(key):
     Retrieve the value associated with a key from the config file
 
     Args:
-        The key to be found
+        key: the configuration parameter to retrieve the value of
 
     Returns:
         Value associated with that key as a string
 
     Raises:
-        ClickException if value returned is None (key doesn't exist in file)
-        ClickException from PermissionError if file cannot be read
+        ClickException: Received PermissionError when opening file or no configuration
+        parameter matching the provided key exists
     """
     try:
         config_file = Path.home() / ".functionary" / "config"
@@ -56,4 +57,4 @@ def get_config_value(key):
             return value
     # if path not found or key not found, raise error
     except PermissionError:
-        raise click.ClickException("Config file present, but could not be read")
+        raise click.ClickException(f"Failed to open {config_file}: Permission Denied")
