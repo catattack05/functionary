@@ -18,6 +18,6 @@ def login_cmd(ctx, user, password, host):
     """
     login_url = f"{host}/api/v1/api-token-auth"
     token = login(login_url, user, password)
-    click.echo("Login successful!")
     save_config_value("token", token)
     save_config_value("host", host)
+    click.echo("Login successful!")
