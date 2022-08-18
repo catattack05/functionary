@@ -6,23 +6,19 @@ import requests
 from .config import get_config_value, save_config_value
 
 
-def get_environment_list():
+def _get_environment_list():
     """
     Helper function to get the environment list from host
-
-    Args:
-        None
-
-    Returns:
-        None
-
-    Raises:
-        ClickException if bad get request
     """
     token = get_config_value("token")
     teams_url = get_config_value("host") + "/api/v1/teams"
     header = {"Authorization": f"Token {token}"}
-    response = requests.get(teams_url, headers=header)
+    try:
+        response = requests.get(teams_url, headers=header)
+    except requests.ConnectionError:
+        raise click.ClickException("Could not connect to host")
+    except requests.Timeout:
+        raise click.ClickException("Timeout occured while trying to connect to host")
 
     if response.ok:
         data = json.loads(response.text).get("results")
@@ -30,6 +26,7 @@ def get_environment_list():
         env_list = []
         for team in data:
             for env_set in team.get("environments"):
+                env_set["team"] = team.get("name")
                 env_list.append(env_set)
         return env_list
     else:
@@ -42,6 +39,9 @@ def get_environment_list():
 @click.group("environment")
 @click.pass_context
 def environment_cmd(ctx):
+    """
+    Click group to associate all environment related commands with
+    """
     pass
 
 
@@ -49,50 +49,41 @@ def environment_cmd(ctx):
 @click.pass_context
 def set(ctx):
     """
-    Command to set the environment id based on user input
-
-    Args:
-        Ctx: The click context
-
-    Returns:
-        None
-
-    Raises:
-        ClickException if bad environment number
+    Set the active environment
     """
-    env_list = get_environment_list()
+    env_list = _get_environment_list()
     index = 1
     click.echo("Available Environments:")
     for item in env_list:
-        click.echo(f"    {index}) {item.get('name')}")
+        click.echo(f"    {index}) {item.get('name')} - {item.get('team')}")
         index += 1
     user_choice = click.prompt("Select environment", type=int)
     try:
         value = env_list[user_choice - 1]
     except IndexError:
         raise click.ClickException("Environment number chosen is not valid")
-    click.echo(f"Active environment is now {value.get('name')}")
-    save_config_value("current_environment", json.dumps(value))
+    click.echo(
+        f"Active environment is now {value.get('name')} from {value.get('team')}"
+    )
+    save_config_value("current_environment_id", value.get("id"))
 
 
 @environment_cmd.command()
 @click.pass_context
 def list(ctx):
     """
-    Command to list all possible environments
-
-    Args:
-        Ctx: The click context
-
-    Returns:
-        None
+    List all available environments
     """
-    env_list = get_environment_list()
-    current_env_id = json.loads(get_config_value("current_environment")).get("id")
+    env_list = _get_environment_list()
+    try:
+        current_env_id = get_config_value("current_environment_id")
+    except click.ClickException:
+        current_env_id = None
     for item in env_list:
         name = item.get("name")
+        team = item.get("team")
         active = "  "
         if current_env_id == item.get("id"):
             active = "* "
 
-        click.echo(f"{active}{name}")
+        click.echo(f"{active}{name} - {team}")
