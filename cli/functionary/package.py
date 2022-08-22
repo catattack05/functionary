@@ -1,12 +1,11 @@
-import json
 import pathlib
 import shutil
 import tarfile
 
 import click
-import requests
 import yaml
 
+from .client import post
 from .config import get_config_value
 
 
@@ -73,7 +72,6 @@ def publish(ctx, path):
     Use the -t option to specify a token or set the FUNCTIONARY_TOKEN
     environment variable after logging in to Functionary.
     """
-    token = get_config_value("token")
     host = get_config_value("host")
 
     full_path = pathlib.Path(path).resolve()
@@ -81,33 +79,9 @@ def publish(ctx, path):
     with tarfile.open(str(tarfile_name), "w:gz") as tar:
         tar.add(str(full_path), arcname="")
 
+    upload_file = open(tarfile_name, "rb")
     click.echo(f"Publishing {str(tarfile_name)} package to {host}")
 
-    # publish should http the tar to a server, wait for return
-    upload_file = open(tarfile_name, "rb")
-    upload_response = None
-    environment_id = json.loads(get_config_value("current_environment")).get("id")
-    headers = {
-        "Authorization": f"Token {token}",
-        "X-Environment-ID": f"{environment_id}",
-    }
-    publish_url = host + "/api/v1/publish"
-    try:
-        upload_response = requests.post(
-            publish_url, headers=headers, files={"package_contents": upload_file}
-        )
-    except requests.ConnectionError:
-        raise click.ClickException(f"Unable to connect to {host}")
-    except requests.Timeout:
-        raise click.ClickException("Timeout occurred waiting for build")
+    post("publish", upload_file)
 
-    # check status code/message on return then exit
-    if upload_response.ok:
-        click.echo("Build succeeded")
-    elif upload_response.status_code == 401:
-        raise click.ClickException("\n\nUnauthorized request, try logging in again.")
-    else:
-        raise click.ClickException(
-            f"Failed to build image: {upload_response.status_code}\n"
-            f"\tResponse: {upload_response.text}"
-        )
+    click.echo("Publish succeded")
