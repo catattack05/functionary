@@ -40,7 +40,7 @@ def _get_environment_list():
 @click.pass_context
 def environment_cmd(ctx):
     """
-    Click group to associate all environment related commands with
+    List or set environments
     """
     pass
 
@@ -55,7 +55,7 @@ def set(ctx):
     index = 1
     click.echo("Available Environments:")
     for item in env_list:
-        click.echo(f"    {index}) {item.get('name')} - {item.get('team')}")
+        click.echo(f"    {index}) {item.get('team')} - {item.get('name')}")
         index += 1
     user_choice = click.prompt("Select environment", type=int)
     try:
@@ -86,4 +86,4 @@ def list(ctx):
         if current_env_id == item.get("id"):
             active = "* "
 
-        click.echo(f"{active}{name} - {team}")
+        click.echo(f"{active}{team} - {name}")
