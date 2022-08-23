@@ -36,9 +36,7 @@ class TeamUserRole(UserRole):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=["user", "team", "role"], name="unique_user_team_role"
-            )
+            models.UniqueConstraint(fields=["user", "team"], name="unique_user_team")
         ]
 
     def __str__(self):
@@ -64,8 +62,8 @@ class EnvironmentUserRole(UserRole):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "environment", "role"],
-                name="unique_user_environment_role",
+                fields=["user", "environment"],
+                name="unique_user_environment",
             )
         ]
 
