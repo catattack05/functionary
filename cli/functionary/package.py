@@ -85,4 +85,3 @@ def publish(ctx, path):
     post("publish", upload_file)
 
     click.echo("Publish succeded")
-

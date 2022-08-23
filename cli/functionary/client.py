@@ -1,6 +1,8 @@
+import json
+
 import click
 import requests
-import json
+
 from .config import get_config_value
 
 
