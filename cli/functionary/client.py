@@ -11,15 +11,14 @@ def get(endpoint):
     Gets any data associated with an endpoint from the api
 
     Args:
-        Endpoint: the name of the endpoint to get data from
+        endpoint: the name of the endpoint to get data from
 
     Returns:
-        Data: Data from endpoint as Python list/dict
+        Data from endpoint as Python list/dict
 
     """
     response = _send_request(endpoint, "get")
-    data = json.loads(response.text).get("results")
-    return data
+    return json.loads(response.text).get("results")
 
 
 def post(endpoint, data=None, files=None):
@@ -27,17 +26,16 @@ def post(endpoint, data=None, files=None):
     Post provides data or files to endpoint
 
     Args:
-        Endpoint: the name of the endpoint to get data from
-        Data: Any data to put in the request's data field
-        Files: Any files to put in the request's files field
+        endpoint: the name of the endpoint to get data from
+        data: Any data to put in the request's data field
+        files: Any files to put in the request's files field
 
     Returns:
-        Data: Response from endpoint as Python list/dict
+        Response from endpoint as Python list/dict
 
     """
     response = _send_request(endpoint, "post", post_data=data, post_files=files)
-    data = json.loads(response.text)
-    return data
+    return json.loads(response.text)
 
 
 def _send_request(endpoint, request_type, post_data=None, post_files=None):
@@ -46,13 +44,13 @@ def _send_request(endpoint, request_type, post_data=None, post_files=None):
     that arise
 
     Args:
-        Endpoint: the name of the endpoint to get data from
-        Request_type: Either post or get
-        Post_data: Any data to put in the post request's data field
-        Post_files: Any files to put in the post request's files field
+        endpoint: the name of the endpoint to get data from
+        request_type: Either post or get
+        post_data: Any data to put in the post request's data field
+        post_files: Any files to put in the post request's files field
 
     Returns:
-        Response: A Response object generated from the request
+        Response object generated from the request
 
     Raises:
         ClickException: Raised if cannot connect to host, permission issue
@@ -61,31 +59,26 @@ def _send_request(endpoint, request_type, post_data=None, post_files=None):
     """
     host = get_config_value("host")
     url = host + f"/api/v1/{endpoint}"
+    headers = {}
     try:
-        if endpoint == "api-token-auth" and request_type == "post":
-            response = requests.post(url, data=post_data)
-        else:
+        try:
             token = get_config_value("token")
-            if endpoint == "teams" and request_type == "get":
-                headers = {"Authorization": f"Token {token}"}
-                response = requests.get(url, headers=headers)
-            else:
-                try:
-                    environment_id = get_config_value("current_environment_id")
-                except click.ClickException:
-                    raise click.ClickException(
-                        "Please set an active environment id using 'environment set'"
-                    )
-                headers = {
-                    "Authorization": f"Token {token}",
-                    "X-Environment-ID": f"{environment_id}",
-                }
-                if request_type == "post":
-                    response = requests.post(
-                        url, headers=headers, data=post_data, files=post_files
-                    )
-                else:
-                    response = requests.get(url, headers=headers)
+            headers["Authorization"] = f"Token {token}"
+        except click.ClickException:
+            pass
+
+        try:
+            environment_id = get_config_value("current_environment_id")
+            headers["X-Environment-ID"] = f"{environment_id}"
+        except click.ClickException:
+            pass
+
+        if request_type == "post":
+            response = requests.post(
+                url, headers=headers, data=post_data, files=post_files
+            )
+        else:
+            response = requests.get(url, headers=headers)
 
     except requests.ConnectionError:
         raise click.ClickException(f"Could not connect to {host}")
@@ -94,6 +87,10 @@ def _send_request(endpoint, request_type, post_data=None, post_files=None):
 
     if response.ok:
         return response
+    elif response.status_code == 400:
+        raise click.ClickException(
+            "Please set an active environment id using 'environment set'"
+        )
     elif response.status_code == 401:
         raise click.ClickException("Authentication failed. Please login and try again.")
     elif response.status_code == 403:

@@ -8,10 +8,10 @@ def _get_environment_list():
     """
     Helper function to get the environment list from host
     """
-    data = get("teams")
+    teams = get("teams")
 
     env_list = []
-    for team in data:
+    for team in teams:
         for env_set in team.get("environments"):
             env_set["team"] = team.get("name")
             env_list.append(env_set)

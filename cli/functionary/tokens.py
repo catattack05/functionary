@@ -5,5 +5,4 @@ def login(user: str, password: str):
     login_response = post(
         "api-token-auth", data={"username": user, "password": password}
     )
-    token = login_response.get("token")
-    return token
+    return login_response.get("token")

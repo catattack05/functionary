@@ -82,6 +82,7 @@ def publish(ctx, path):
     upload_file = open(tarfile_name, "rb")
     click.echo(f"Publishing {str(tarfile_name)} package to {host}")
 
-    post("publish", files={"package_contents": upload_file})
-
-    click.echo("Publish succeded")
+    response = post("publish", files={"package_contents": upload_file})
+    upload_file.close()
+    id = response["id"]
+    click.echo(f"Publish {id} succeded")
