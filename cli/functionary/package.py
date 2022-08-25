@@ -4,8 +4,10 @@ import tarfile
 
 import click
 import yaml
+from rich.console import Console
+from rich.table import Table
 
-from .client import post
+from .client import get, post
 from .config import get_config_value
 
 
@@ -86,3 +88,40 @@ def publish(ctx, path):
     upload_file.close()
     id = response["id"]
     click.echo(f"Publish {id} succeded")
+
+
+@package_cmd.command()
+@click.pass_context
+@click.option("--id")
+def buildstatus(ctx, id):
+    """
+    View status for all builds, or build with specific id
+    """
+    if id:
+        results = [get(f"builds/{id}")]
+        _format_results(results, title=f"Build: {id}")
+    else:
+        results = get("builds").get("results")
+        _format_results(results, title="Build Status")
+
+
+def _format_results(results, title=""):
+    """
+    Helper function to organize table results using Rich
+
+    Args:
+        results: Results to format
+        title: Optional table title
+    """
+    table = Table(title=title)
+    console = Console()
+    count = 1
+    for item in results:
+        list = []
+        for key in item:
+            if count == 1:
+                table.add_column(key.capitalize())
+            list.append(str(item[key]))
+        table.add_row(*list)
+        count += 1
+    console.print(table)

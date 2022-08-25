@@ -18,7 +18,7 @@ def get(endpoint):
 
     """
     response = _send_request(endpoint, "get")
-    return json.loads(response.text).get("results")
+    return json.loads(response.text)
 
 
 def post(endpoint, data=None, files=None):
