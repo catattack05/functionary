@@ -7,6 +7,7 @@ import yaml
 
 from .client import post
 from .config import get_config_value
+from io import BytesIO, IOBase, RawIOBase
 
 
 def create_languages() -> list[str]:
@@ -81,8 +82,6 @@ def publish(ctx, path):
 
     upload_file = open(tarfile_name, "rb")
     click.echo(f"Publishing {str(tarfile_name)} package to {host}")
-
     response = post("publish", files={"package_contents": upload_file})
-    upload_file.close()
     id = response["id"]
     click.echo(f"Publish {id} succeded")

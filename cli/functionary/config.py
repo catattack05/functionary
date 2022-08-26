@@ -34,7 +34,7 @@ def save_config_value(key, value):
         raise click.ClickException(f"Failed to open {config_file}: Permission Denied")
 
 
-def get_config_value(key):
+def get_config_value(key, raise_exception=False):
     """
     Retrieve the value associated with a key from the config file
 
@@ -52,7 +52,10 @@ def get_config_value(key):
         config_file = Path.home() / ".functionary" / "config"
         value = get_key(config_file, key)
         if value is None:
-            raise click.ClickException(f"Could not find value for {key}")
+            if raise_exception == None:
+                return None
+            else:
+                raise click.ClickException(f"Could not find value for {key}")
         else:
             return value
     # if path not found or key not found, raise error

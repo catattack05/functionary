@@ -4,6 +4,7 @@ import click
 import requests
 
 from .config import get_config_value
+from io import IOBase
 
 
 def get(endpoint):
@@ -61,17 +62,15 @@ def _send_request(endpoint, request_type, post_data=None, post_files=None):
     url = host + f"/api/v1/{endpoint}"
     headers = {}
     try:
-        try:
-            token = get_config_value("token")
+        if (token := get_config_value("token", raise_exception=False)) is not None:
             headers["Authorization"] = f"Token {token}"
-        except click.ClickException:
-            pass
 
-        try:
-            environment_id = get_config_value("current_environment_id")
+        if (
+            environment_id := get_config_value(
+                "current_environment_id", raise_exception=False
+            )
+        ) is not None:
             headers["X-Environment-ID"] = f"{environment_id}"
-        except click.ClickException:
-            pass
 
         if request_type == "post":
             response = requests.post(
@@ -88,6 +87,7 @@ def _send_request(endpoint, request_type, post_data=None, post_files=None):
     if response.ok:
         return response
     elif response.status_code == 400:
+        # TODO: Add checking of error codes in addition to status once they are added to the API
         raise click.ClickException(
             "Please set an active environment id using 'environment set'"
         )
