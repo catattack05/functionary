@@ -1,5 +1,6 @@
 import click
-
+from rich.console import Console
+from rich.text import Text
 from .client import get
 from .config import get_config_value, save_config_value
 
@@ -62,10 +63,13 @@ def list(ctx):
     except click.ClickException:
         current_env_id = None
     for item in env_list:
+        text = Text()
+        console = Console()
         name = item.get("name")
         team = item.get("team")
         active = "  "
         if current_env_id == item.get("id"):
             active = "* "
-
-        click.echo(f"{active}{team} - {name}")
+        text.append(f"{active}", style="bold red")
+        text.append(f"{team} - {name}")
+        console.print(text)
