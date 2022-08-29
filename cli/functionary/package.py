@@ -79,11 +79,8 @@ def publish(ctx, path):
     with tarfile.open(str(tarfile_name), "w:gz") as tar:
         tar.add(str(full_path), arcname="")
 
-    upload_file = open(tarfile_name, "rb")
-    click.echo(f"Publishing {str(tarfile_name)} package to {host}")
-    try:
+    with open(tarfile_name, "rb") as upload_file:
+        click.echo(f"Publishing {str(tarfile_name)} package to {host}")
         response = post("publish", files={"package_contents": upload_file})
         id = response["id"]
         click.echo(f"Publish {id} succeded")
-    finally:
-        upload_file.close()
