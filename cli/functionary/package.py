@@ -112,6 +112,9 @@ def _format_results(results, title=""):
     Args:
         results: Results to format
         title: Optional table title
+
+    Returns:
+        None
     """
     table = Table(title=title)
     console = Console()
