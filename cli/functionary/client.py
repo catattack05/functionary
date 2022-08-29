@@ -4,7 +4,6 @@ import click
 import requests
 
 from .config import get_config_value
-from io import IOBase
 
 
 def get(endpoint):
@@ -87,7 +86,8 @@ def _send_request(endpoint, request_type, post_data=None, post_files=None):
     if response.ok:
         return response
     elif response.status_code == 400:
-        # TODO: Add checking of error codes in addition to status once they are added to the API
+        # TODO: Add error codes checking in addition to status once they are added
+        # to the API
         raise click.ClickException(
             "Please set an active environment id using 'environment set'"
         )
