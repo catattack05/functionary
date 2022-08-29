@@ -116,7 +116,7 @@ def _format_results(results, title=""):
     Returns:
         None
     """
-    table = Table(title=title)
+    table = Table(title=title, width=170)
     console = Console()
     count = 1
     for item in results:
