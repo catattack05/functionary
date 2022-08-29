@@ -52,7 +52,7 @@ def get_config_value(key, raise_exception=False):
         config_file = Path.home() / ".functionary" / "config"
         value = get_key(config_file, key)
         if value is None:
-            if raise_exception is not None:
+            if raise_exception is False:
                 return None
             else:
                 raise click.ClickException(f"Could not find value for {key}")

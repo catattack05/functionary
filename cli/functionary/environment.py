@@ -57,10 +57,7 @@ def list(ctx):
     List all available environments
     """
     env_list = _get_environment_list()
-    try:
-        current_env_id = get_config_value("current_environment_id")
-    except click.ClickException:
-        current_env_id = None
+    current_env_id = get_config_value("current_environment_id")
     for item in env_list:
         name = item.get("name")
         team = item.get("team")

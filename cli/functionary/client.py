@@ -57,7 +57,7 @@ def _send_request(endpoint, request_type, post_data=None, post_files=None):
         exists, user has not set a required field, or other request failure
 
     """
-    host = get_config_value("host")
+    host = get_config_value("host", raise_exception=True)
     url = host + f"/api/v1/{endpoint}"
     headers = {}
     try:

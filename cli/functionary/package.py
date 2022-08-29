@@ -72,7 +72,7 @@ def publish(ctx, path):
     Use the -t option to specify a token or set the FUNCTIONARY_TOKEN
     environment variable after logging in to Functionary.
     """
-    host = get_config_value("host")
+    host = get_config_value("host", raise_exception=True)
 
     full_path = pathlib.Path(path).resolve()
     tarfile_name = full_path.joinpath(f"{full_path.name}.tar.gz")
@@ -83,4 +83,4 @@ def publish(ctx, path):
         click.echo(f"Publishing {str(tarfile_name)} package to {host}")
         response = post("publish", files={"package_contents": upload_file})
         id = response["id"]
-        click.echo(f"Publish {id} succeded")
+        click.echo(f"Package upload complete\nBuild id: {id}")
