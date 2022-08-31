@@ -2,7 +2,7 @@ from rich.console import Console
 from rich.table import Table
 
 
-def format_results(results, title=""):
+def format_results(results, title="", caption=None, excluded_fields=[]):
     """
     Helper function to organize table results using Rich
 
@@ -13,15 +13,14 @@ def format_results(results, title=""):
     Returns:
         None
     """
-    table = Table(title=title)
+    table = Table(title=title, caption=caption, show_lines=True)
     console = Console()
     first_row = True
-    EXCLUDED_FIELDS = ["environment"]
 
     for item in results:
         row_data = []
         for key, value in item.items():
-            if key in EXCLUDED_FIELDS:
+            if key in excluded_fields:
                 continue
             if first_row:
                 table.add_column(key.capitalize())

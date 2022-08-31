@@ -96,7 +96,61 @@ def buildstatus(ctx, id):
     """
     if id:
         results = get(f"builds/{id}")
-        format_results([results], title=f"Build: {id}")
+        format_results([results], title=f"Build: {id}", excluded_fields=["environment"])
     else:
         results = get("builds")
-        format_results(results, title="Build Status")
+        format_results(results, title="Build Status", excluded_fields=["environment"])
+
+
+@package_cmd.command()
+@click.pass_context
+@click.option("--id", help="view a specific package with the given id")
+def view(ctx, id):
+    """
+    View all current packages and their functions
+    """
+    packages = get("packages")
+    functions = get("functions")
+    if id:
+        name = ""
+        description = ""
+        found = False
+        for package in packages:
+            if package["id"] == id:
+                name = package["name"]
+                description = package["description"]
+                found = True
+        if found:
+            associated_functions = []
+            for function in functions:
+                if function["package"] == id:
+                    function_dict = {}
+                    function_dict["Function Name"] = function["name"]
+                    function_dict["Display Name"] = function["display_name"]
+                    function_dict["Description"] = function["description"]
+                    associated_functions.append(function_dict)
+            format_results(
+                associated_functions,
+                title=f"{name}\n {description}",
+            )
+        else:
+            click.echo(f"Package with id {id} not found")
+    else:
+        for i in range(0, len(packages)):
+            package = packages[i]
+            name = package["name"]
+            description = package["description"]
+            associated_functions = []
+            for function in functions:
+                if function["package"] == package["id"]:
+                    function_dict = {}
+                    function_dict["Function Name"] = function["name"]
+                    function_dict["Display Name"] = function["display_name"]
+                    function_dict["Description"] = function["description"]
+                    associated_functions.append(function_dict)
+            format_results(
+                associated_functions,
+                title=f"{name} \n {description}",
+            )
+            if i != len(packages) - 1:
+                click.echo("\n")
