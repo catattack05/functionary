@@ -13,6 +13,10 @@ def login(login_url, user: str, password: str):
         if login_response.ok:
             token = json.loads(login_response.text).get("token")
             return token
+        elif login_response.status_code == 400:
+            raise click.ClickException(
+                "Code 400: Unable to login due to an invalid username or password."
+            )
         else:
             raise click.ClickException(
                 f"Failed to login: {login_response.status_code}\n"
