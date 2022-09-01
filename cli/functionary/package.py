@@ -132,8 +132,8 @@ def view(ctx, id):
             id = package["id"]
             description = package["description"]
             associated_functions = _find_functions(id, functions)
-    title = Text(f"{name}", style="bold")
-    title.append(f"\n{description}", style="dim")
+    title = Text(f"{name}", style="bold green")
+    title.append(f"\n{description}", style="green dim")
     format_results(associated_functions, title=title)
 
 
