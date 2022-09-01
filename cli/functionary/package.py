@@ -4,6 +4,7 @@ import tarfile
 
 import click
 import yaml
+from rich.text import Text
 
 from .client import get, post
 from .config import get_config_value
@@ -121,36 +122,39 @@ def view(ctx, id):
                 description = package["description"]
                 found = True
         if found:
-            associated_functions = []
-            for function in functions:
-                if function["package"] == id:
-                    function_dict = {}
-                    function_dict["Function Name"] = function["name"]
-                    function_dict["Display Name"] = function["display_name"]
-                    function_dict["Description"] = function["description"]
-                    associated_functions.append(function_dict)
-            format_results(
-                associated_functions,
-                title=f"{name}\n {description}",
-            )
+            associated_functions = _find_functions(id, functions)
         else:
-            click.echo(f"Package with id {id} not found")
+            raise click.ClickException(f"Package with id {id} not found")
     else:
         for i in range(0, len(packages)):
             package = packages[i]
             name = package["name"]
+            id = package["id"]
             description = package["description"]
-            associated_functions = []
-            for function in functions:
-                if function["package"] == package["id"]:
-                    function_dict = {}
-                    function_dict["Function Name"] = function["name"]
-                    function_dict["Display Name"] = function["display_name"]
-                    function_dict["Description"] = function["description"]
-                    associated_functions.append(function_dict)
-            format_results(
-                associated_functions,
-                title=f"{name} \n {description}",
-            )
-            if i != len(packages) - 1:
-                click.echo("\n")
+            associated_functions = _find_functions(id, functions)
+    title = Text(f"{name}", style="bold")
+    title.append(f"\n{description}", style="dim")
+    format_results(associated_functions, title=title)
+
+
+def _find_functions(id, functions):
+    """
+    Helper function to find all functions associated with a given package id
+
+    Args:
+        id: the package id
+        functions: A list of function dictionaries
+
+    Returns:
+        associated_functions: A list of dictionaries with information about each
+        function
+    """
+    associated_functions = []
+    for function in functions:
+        if function["package"] == id:
+            function_dict = {}
+            function_dict["Function Name"] = function["name"]
+            function_dict["Display Name"] = function["display_name"]
+            function_dict["Description"] = function["description"]
+            associated_functions.append(function_dict)
+    return associated_functions

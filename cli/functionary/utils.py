@@ -2,7 +2,7 @@ from rich.console import Console
 from rich.table import Table
 
 
-def format_results(results, title="", caption=None, excluded_fields=[]):
+def format_results(results, title="", excluded_fields=[]):
     """
     Helper function to organize table results using Rich
 
@@ -13,7 +13,7 @@ def format_results(results, title="", caption=None, excluded_fields=[]):
     Returns:
         None
     """
-    table = Table(title=title, caption=caption, show_lines=True)
+    table = Table(title=title, show_lines=True, title_justify="left")
     console = Console()
     first_row = True
 
