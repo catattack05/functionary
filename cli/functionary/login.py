@@ -17,6 +17,6 @@ def login_cmd(ctx, user, password, host):
     for other functionary commands to use to communicate with the server.
     """
     save_config_value("host", host)
-    token = login(f"{host}/api/v1/api-token-auth", user, password)
+    token = login(host, user, password)
     save_config_value("token", token)
     click.echo("Login successful!")

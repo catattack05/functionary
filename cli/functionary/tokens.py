@@ -4,8 +4,9 @@ import click
 import requests
 
 
-def login(login_url, user: str, password: str):
+def login(host, user: str, password: str):
     try:
+        login_url = f"{host}/api/v1/api-token-auth"
         login_response = requests.post(
             f"{login_url}", data={"username": user, "password": password}
         )
@@ -15,7 +16,7 @@ def login(login_url, user: str, password: str):
             return token
         elif login_response.status_code == 400:
             raise click.ClickException(
-                "Code 400: Unable to login due to an invalid username or password."
+                "Unable to login due to an invalid username or password."
             )
         else:
             raise click.ClickException(
