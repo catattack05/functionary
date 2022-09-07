@@ -112,17 +112,19 @@ def list(ctx):
     packages = get("packages")
     functions = get("functions")
     functions_lookup = {}
+
     for function in functions:
         package_id = function["package"]
         function_dict = {}
         function_dict["Function"] = function["name"]
         function_dict["Display Name"] = function["display_name"]
         function_dict["Description"] = function["description"]
+
         if package_id in functions_lookup:
             functions_lookup[package_id].append(function_dict)
         else:
-            index_list = [function_dict]
-            functions_lookup[package_id] = index_list
+            functions_lookup[package_id] = [function_dict]
+
     for package in packages:
         name = package["name"]
         id = package["id"]
@@ -131,3 +133,4 @@ def list(ctx):
         title = Text(f"{name}", style="bold blue")
         title.append(f"\n{description}", style="blue dim")
         format_results(associated_functions, title=title)
+        click.echo("\n")
