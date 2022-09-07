@@ -105,56 +105,29 @@ def buildstatus(ctx, id):
 
 @package_cmd.command()
 @click.pass_context
-@click.option("--id", help="view a specific package with the given id")
-def view(ctx, id):
+def list(ctx):
     """
     View all current packages and their functions
     """
     packages = get("packages")
     functions = get("functions")
-    if id:
-        name = ""
-        description = ""
-        found = False
-        for package in packages:
-            if package["id"] == id:
-                name = package["name"]
-                description = package["description"]
-                found = True
-        if found:
-            associated_functions = _find_functions(id, functions)
-        else:
-            raise click.ClickException(f"Package with id {id} not found")
-    else:
-        for i in range(0, len(packages)):
-            package = packages[i]
-            name = package["name"]
-            id = package["id"]
-            description = package["description"]
-            associated_functions = _find_functions(id, functions)
-    title = Text(f"{name}", style="bold green")
-    title.append(f"\n{description}", style="green dim")
-    format_results(associated_functions, title=title)
-
-
-def _find_functions(id, functions):
-    """
-    Helper function to find all functions associated with a given package id
-
-    Args:
-        id: the package id
-        functions: A list of function dictionaries
-
-    Returns:
-        associated_functions: A list of dictionaries with information about each
-        function
-    """
-    associated_functions = []
+    functions_lookup = {}
     for function in functions:
-        if function["package"] == id:
-            function_dict = {}
-            function_dict["Function Name"] = function["name"]
-            function_dict["Display Name"] = function["display_name"]
-            function_dict["Description"] = function["description"]
-            associated_functions.append(function_dict)
-    return associated_functions
+        package_id = function["package"]
+        function_dict = {}
+        function_dict["Function"] = function["name"]
+        function_dict["Display Name"] = function["display_name"]
+        function_dict["Description"] = function["description"]
+        if package_id in functions_lookup:
+            functions_lookup[package_id].append(function_dict)
+        else:
+            index_list = [function_dict]
+            functions_lookup[package_id] = index_list
+    for package in packages:
+        name = package["name"]
+        id = package["id"]
+        description = package["description"]
+        associated_functions = functions_lookup[id]
+        title = Text(f"{name}", style="bold blue")
+        title.append(f"\n{description}", style="blue dim")
+        format_results(associated_functions, title=title)
