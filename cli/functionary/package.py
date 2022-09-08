@@ -1,9 +1,9 @@
+import os
 import pathlib
 import shutil
 import tarfile
 
 import click
-import yaml
 from rich.text import Text
 
 from .client import get, post
@@ -17,15 +17,16 @@ def create_languages() -> list[str]:
 
 
 def generateYaml(output_dir: str, name: str, language: str):
-    metadata = {
-        "name": name,
-        "version": "1.0",
-        "x-language": language,
-    }
-
-    path = pathlib.Path(output_dir).resolve() / name / f"{name}.yaml"
-    with path.open(mode="w"):
-        path.write_text(yaml.dump(metadata))
+    path = pathlib.Path(output_dir).resolve() / name / "package.yaml"
+    path2 = pathlib.Path(
+        os.getcwd().split("functionary", 1)[0]
+        + "functionary/cli/functionary/template.yaml"
+    ).resolve()
+    with path2.open(mode="r") as template, path.open(mode="a") as new:
+        filedata = template.read()
+        filedata = filedata.replace("__PACKAGE_LANGUAGE__", language)
+        filedata = filedata.replace("__PACKAGE_NAME__", name)
+        new.write(filedata)
 
 
 @click.group("package")
@@ -39,7 +40,7 @@ def package_cmd(ctx):
     "--language",
     "-l",
     type=click.Choice(create_languages(), case_sensitive=False),
-    default="python",
+    required=True,
 )
 @click.option("--output-directory", "-o", type=click.Path(exists=True), default=".")
 @click.argument("name", type=str)
@@ -60,6 +61,13 @@ def create_cmd(ctx, language, name, output_directory):
 
     shutil.copytree(str(basepath), str(dir), dirs_exist_ok=True)
     generateYaml(output_directory, name, language)
+    click.echo(
+        "Next steps: \n"
+        "* Write your functions in the generated functions.py \n"
+        "* Update the package.yaml with your package and function information \n"
+        "* When ready, publish the package to your environment by running: \n"
+        f"    functionary package publish {output_directory}/{name}"
+    )
 
 
 @package_cmd.command()

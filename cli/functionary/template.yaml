@@ -1,0 +1,40 @@
+# (required): schema version for the package definition
+version: 1.0
+package:
+  # (required) human-friendly unique identifier; cannot be changed
+  name: "__PACKAGE_NAME__"
+
+  #   # (optional) defaults to name; determines how the package is displayed in the UI
+  #   display_name: string
+
+  #   # (optional) detailed description
+  #   description: string
+
+  # (required) language that the functions are written in
+  language: "__PACKAGE_LANGUAGE__"
+
+  functions:
+#    # similar to package level fields, but for the function
+#    - name: string
+#      display_name: string
+#      description: string
+
+#      # (required) Parameters that the function takes
+#      parameters:
+#          # (required) should match the name of the parameter in the actual function signature
+#        - name: string
+#          # (optional) defaults to name; determines how the parameter is displayed in the UI
+#          display_name: string
+#          # (optional) detailed description
+#          description: string
+#          # (required) data type of the parameter     <-- list of valid types TBD, so leave it at this for now
+#          type:  string
+#          # (optional) default value that will be used if none is provided
+#          default: string | num
+#          # (optional) whether the parameter is required
+#          required: bool
+
+#          # (optional) enumerate valid input options
+#          options:
+#            - name: string
+#              value: string | num
