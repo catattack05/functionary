@@ -5,6 +5,7 @@ import tarfile
 
 import click
 from rich.text import Text
+from rich.console import Console
 
 from .client import get, post
 from .config import get_config_value
@@ -17,13 +18,13 @@ def create_languages() -> list[str]:
 
 
 def generateYaml(output_dir: str, name: str, language: str):
-    path = pathlib.Path(output_dir).resolve() / name / "package.yaml"
-    path2 = pathlib.Path(
-        os.getcwd().split("functionary", 1)[0]
-        + "functionary/cli/functionary/template.yaml"
-    ).resolve()
-    with path2.open(mode="r") as template, path.open(mode="a") as new:
-        filedata = template.read()
+    package_path = pathlib.Path(output_dir).resolve() / name / "package.yaml"
+    template_path = (
+        pathlib.Path(__file__).parent.resolve() / "templates" / "template.yaml"
+    )
+
+    with template_path.open(mode="r") as temp, package_path.open(mode="a") as new:
+        filedata = temp.read()
         filedata = filedata.replace("__PACKAGE_LANGUAGE__", language)
         filedata = filedata.replace("__PACKAGE_NAME__", name)
         new.write(filedata)
@@ -51,8 +52,6 @@ def create_cmd(ctx, language, name, output_directory):
 
     Create an example function in the specified language.
     """
-    click.echo()
-    click.echo(f"Generating {language} function named {name}")
     dir = pathlib.Path(output_directory) / name
     if not dir.exists():
         dir.mkdir()
@@ -61,13 +60,22 @@ def create_cmd(ctx, language, name, output_directory):
 
     shutil.copytree(str(basepath), str(dir), dirs_exist_ok=True)
     generateYaml(output_directory, name, language)
-    click.echo(
-        "Next steps: \n"
-        "* Write your functions in the generated functions.py \n"
-        "* Update the package.yaml with your package and function information \n"
-        "* When ready, publish the package to your environment by running: \n"
-        f"    functionary package publish {output_directory}/{name}"
+
+    click.echo()
+    click.echo(f"Package creation for {name} successful!\n")
+    text = Text()
+    console = Console()
+    text.append("Next Steps: \n", style="b u blue")
+    text.append("* ", style="b blue")
+    text.append("Write your functions in the generated functions.py \n")
+    text.append("* ", style="b blue")
+    text.append("Update the package.yaml with your package and function information \n")
+    text.append("* ", style="b blue")
+    text.append("When ready, publish the package to your environment by running: \n")
+    text.append(
+        f"    functionary package publish {output_directory}/{name}\n", style="b"
     )
+    console.print(text)
 
 
 @package_cmd.command()
