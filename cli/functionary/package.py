@@ -19,7 +19,7 @@ def create_languages() -> list[str]:
 def generateYaml(output_dir: str, name: str, language: str):
     package_path = pathlib.Path(output_dir).resolve() / name / "package.yaml"
     template_path = (
-        pathlib.Path(__file__).parent.resolve() / "templates" / "template.yaml"
+        pathlib.Path(__file__).parent.resolve() / "templates" / "package.yaml"
     )
 
     with template_path.open(mode="r") as temp, package_path.open(mode="a") as new:
@@ -64,13 +64,13 @@ def create_cmd(ctx, language, name, output_directory):
     click.echo(f"Package creation for {name} successful!\n")
     text = Text()
     console = Console()
-    text.append("Next Steps: \n", style="b u blue")
+    text.append("Next Steps\n", style="b u blue")
     text.append("* ", style="b blue")
-    text.append("Write your functions in the generated functions.py \n")
+    text.append("Write your functions in the generated functions.py\n")
     text.append("* ", style="b blue")
-    text.append("Update the package.yaml with your package and function information \n")
+    text.append("Update the package.yaml with your package and function information\n")
     text.append("* ", style="b blue")
-    text.append("When ready, publish the package to your environment by running: \n")
+    text.append("When ready, publish the package to your environment by running:\n\n")
     text.append(
         f"    functionary package publish {output_directory}/{name}\n", style="b"
     )
