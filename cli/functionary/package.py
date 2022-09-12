@@ -1,11 +1,10 @@
-import os
 import pathlib
 import shutil
 import tarfile
 
 import click
-from rich.text import Text
 from rich.console import Console
+from rich.text import Text
 
 from .client import get, post
 from .config import get_config_value
