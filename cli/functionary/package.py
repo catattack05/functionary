@@ -4,12 +4,14 @@ import shutil
 import tarfile
 
 import click
+import yaml
 from rich.console import Console
 from rich.text import Text
 
 from .client import get, post
 from .config import get_config_value
 from .utils import flatten, format_results
+from .parser import parse
 
 
 def create_languages() -> list[str]:
@@ -187,3 +189,43 @@ def list(ctx):
             title.append(f"\n{description}", style="blue dim")
         format_results(associated_functions, title=title)
         click.echo("\n")
+
+
+@package_cmd.command()
+@click.pass_context
+@click.argument("path", type=str)
+def genschema(ctx, path):
+    """
+    Populate package.yaml with package functions
+    """
+
+    language = None
+    try:
+        with open(path + "/package.yaml", "r") as yaml_file:
+            filedata = yaml.safe_load(yaml_file)
+            language = filedata["package"]["language"]
+    except FileNotFoundError:
+        raise click.ClickException("Could not find package.yaml file")
+    except PermissionError:
+        raise click.ClickException("Did not have permission to access package.yaml")
+    except NotADirectoryError:
+        raise click.ClickException(f"Directory {path} does not exist")
+
+    functions = parse(language, path)
+
+    if len(functions) == 0:
+        click.echo("No functions detected, package.yaml unchanged")
+    else:
+        try:
+            with open(path + "/package.yaml", "r") as yaml_file:
+                filedata = yaml.safe_load(yaml_file)
+                filedata["package"]["functions"] = functions
+
+            with open(path + "/package.yaml", "w") as yaml_file:
+                yaml.dump(filedata, yaml_file, sort_keys=False)
+        except FileNotFoundError:
+            raise click.ClickException("Could not find package.yaml file")
+        except PermissionError:
+            raise click.ClickException("Did not have permission to access package.yaml")
+
+        click.echo("Package.yaml successfully updated!")
