@@ -16,7 +16,7 @@ def login_cmd(ctx, user, password, host):
     Set the output of this command to the FUNCTIONARY_TOKEN environment variable
     for other functionary commands to use to communicate with the server.
     """
-    save_config_value("host", host)
     token = login(host, user, password)
+    save_config_value("host", host)
     save_config_value("token", token)
     click.echo("Login successful!")
