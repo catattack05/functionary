@@ -1,3 +1,4 @@
+import os
 import pathlib
 import shutil
 import tarfile
@@ -22,7 +23,7 @@ def generateYaml(output_dir: str, name: str, language: str):
         pathlib.Path(__file__).parent.resolve() / "templates" / "package.yaml"
     )
 
-    with template_path.open(mode="r") as temp, package_path.open(mode="a") as new:
+    with template_path.open(mode="r") as temp, package_path.open(mode="w") as new:
         filedata = temp.read()
         filedata = filedata.replace("__PACKAGE_LANGUAGE__", language)
         filedata = filedata.replace("__PACKAGE_NAME__", name)
@@ -42,8 +43,8 @@ def package_cmd(ctx):
     type=click.Choice(create_languages(), case_sensitive=False),
     required=True,
 )
-@click.option("--output-directory", "-o", type=click.Path(exists=True), default=".")
 @click.argument("name", type=str)
+@click.option("--output-directory", "-o", type=click.Path(exists=True), default=".")
 @click.pass_context
 def create_cmd(ctx, language, name, output_directory):
     """
@@ -60,6 +61,11 @@ def create_cmd(ctx, language, name, output_directory):
     dir = pathlib.Path(output_directory) / name
     if not dir.exists():
         dir.mkdir()
+
+    elif os.listdir(dir):
+        raise click.ClickException(
+            f"Create command failed: {output_directory + '/' + name} is not empty."
+        )
 
     basepath = pathlib.Path(__file__).parent.resolve() / "templates" / language
 
