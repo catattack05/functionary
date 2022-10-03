@@ -65,6 +65,7 @@ def create_cmd(ctx, language, name, output_directory):
     elif os.listdir(dir):
         raise click.ClickException(
             f"Create command failed: {output_directory + '/' + name} is not empty."
+            "Destination must be a new or empty directory."
         )
 
     basepath = pathlib.Path(__file__).parent.resolve() / "templates" / language
