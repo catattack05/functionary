@@ -217,9 +217,7 @@ def genschema(ctx, path):
         click.echo("No functions detected, package.yaml unchanged")
     else:
         try:
-            with open(path + "/package.yaml", "r") as yaml_file:
-                filedata = yaml.safe_load(yaml_file)
-                filedata["package"]["functions"] = functions
+            filedata["package"]["functions"] = functions
 
             with open(path + "/package.yaml", "w") as yaml_file:
                 yaml.dump(filedata, yaml_file, sort_keys=False)

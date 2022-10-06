@@ -15,28 +15,6 @@ type_map = {
 }
 
 
-def _retrieve_function_data(path):
-    """
-    Helper function for py_parse that
-    gets function data from path/function.py
-
-    Args:
-        path: the path to file
-    Returns:
-        function_data: content of file as string
-    Raises:
-        ClickException if file not found or cannot be accessed
-    """
-    try:
-        with open(path + "/functions.py", "r") as func_file:
-            function_data = func_file.read()
-    except FileNotFoundError:
-        raise click.ClickException("Could not find functions.py")
-    except PermissionError:
-        raise click.ClickException("Did not have permission to access functions.py")
-    return function_data
-
-
 def _retrieve_function_nodes(data):
     """
     Helper function for py_parse to retrieve
@@ -94,23 +72,25 @@ def _create_argument_list(node):
             except KeyError:
                 type = None
 
+        # Set as required now, will update later if needed when handling defaults
         arg_dict["required"] = True
         arg_list.append(arg_dict)
 
         if type is None:
             click.echo(
-                f"Type of argument {arg.arg} in function {node.name} not detected or "
-                "is unsupported. Please specify type in package.yaml manually before "
-                "publishing package, as argument type is required.\n"
+                f"The argument type of {arg.arg} in function {node.name} could "
+                "not be parsed, was not specified, or is an unsupported type. "
+                "Please update package.yaml with arg type manually prior to "
+                "publishing package to ensure a successful build.\n"
             )
     return arg_list
 
 
 def _assign_defaults(node, arg_list):
     """
-    Helper function for py_parse. If arg
+    Helper function for py_parse. If arg in list
     has a default, fill out arg's dictionary with
-    default
+    that default
 
     Args:
         node: ast node representing function
@@ -126,22 +106,25 @@ def _assign_defaults(node, arg_list):
     no_default = arg_list[:default_start]
 
     for arg, default in zip(has_default, defaults):
-        if arg["type"] == type_map["date"]:
-            default_params = [arg.value for arg in default.args]
-            default = str(datetime.date(*default_params))
-        elif arg["type"] == type_map["datetime"]:
-            default_params = [arg.value for arg in default.args]
-            default = str(datetime.datetime(*default_params))
-        elif arg["type"] == type_map["dict"]:
-            click.echo(
-                "Automatic function generation for default dictionary"
-                " not currently implemented. Please add dictionary"
-                " default manually\n"
-            )
-            default = None
-        elif arg["type"] == type_map["bool"]:
-            default = str(default.value)
-        else:
+        try:
+            if arg["type"] == type_map["date"]:
+                default_params = [arg.value for arg in default.args]
+                default = str(datetime.date(*default_params))
+            elif arg["type"] == type_map["datetime"]:
+                default_params = [arg.value for arg in default.args]
+                default = str(datetime.datetime(*default_params))
+            elif arg["type"] == type_map["dict"]:
+                click.echo(
+                    "Automatic function generation for default dictionary"
+                    " not currently implemented. Please add dictionary"
+                    " default manually\n"
+                )
+                default = None
+            elif arg["type"] == type_map["bool"]:
+                default = str(default.value)
+            else:
+                default = default.value
+        except KeyError:
             default = default.value
 
         arg["default"] = default
@@ -151,7 +134,7 @@ def _assign_defaults(node, arg_list):
     return arg_list
 
 
-def py_parse(path):
+def py_parse(filedata):
     """
     Parses a python file
     and returns a list of dictionaries representing
@@ -167,7 +150,6 @@ def py_parse(path):
         ClickException if issue accessing file, syntax issue
         in file or function arg type not valid
     """
-    filedata = _retrieve_function_data(path)
 
     function_nodes = _retrieve_function_nodes(filedata)
 
