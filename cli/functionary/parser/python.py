@@ -106,28 +106,38 @@ def _assign_defaults(node, arg_list):
     no_default = arg_list[:default_start]
 
     for arg, default in zip(has_default, defaults):
-        try:
-            if arg["type"] == type_map["date"]:
+        arg_default = None
+
+        if "type" in arg.keys():
+            if arg["type"] == type_map["date"] and isinstance(default, ast.Call):
                 default_params = [arg.value for arg in default.args]
-                default = str(datetime.date(*default_params))
-            elif arg["type"] == type_map["datetime"]:
+                arg_default = str(datetime.date(*default_params))
+            elif arg["type"] == type_map["datetime"] and isinstance(default, ast.Call):
                 default_params = [arg.value for arg in default.args]
-                default = str(datetime.datetime(*default_params))
+                arg_default = str(datetime.datetime(*default_params))
             elif arg["type"] == type_map["dict"]:
                 click.echo(
                     "Automatic function generation for default dictionary"
                     " not currently implemented. Please add dictionary"
                     " default manually\n"
                 )
-                default = None
             elif arg["type"] == type_map["bool"]:
-                default = str(default.value)
-            else:
-                default = default.value
-        except KeyError:
-            default = default.value
+                arg_default = str(default.value)
+            elif hasattr(default, "value"):
+                arg_default = default.value
 
-        arg["default"] = default
+        elif hasattr(default, "value"):
+            arg_default = default.value
+
+        if arg_default:
+            arg["default"] = arg_default
+        else:
+            click.echo(
+                f"Cannot parse default for {arg['name']} in {node.name}. "
+                "Please update package.yaml with default manually prior to "
+                "publishing package to ensure an accurate build.\n"
+            )
+
         arg["required"] = False
 
     arg_list = no_default + has_default
