@@ -10,8 +10,8 @@ from rich.text import Text
 
 from .client import get, post
 from .config import get_config_value
-from .utils import flatten, format_results
 from .parser import parse
+from .utils import flatten, format_results
 
 
 def create_languages() -> list[str]:
