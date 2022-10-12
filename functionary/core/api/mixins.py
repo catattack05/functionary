@@ -7,7 +7,11 @@ from rest_framework.exceptions import PermissionDenied
 from core.auth import Permission
 from core.models import Environment, Team
 
-from .exceptions import BadRequest
+from .exceptions import (
+    InvalidEnvironmentHeader,
+    InvalidTeamIDHeader,
+    MissingEnvironmentHeader,
+)
 
 
 class EnvironmentViewMixin:
@@ -34,22 +38,26 @@ class EnvironmentViewMixin:
             try:
                 environment_obj = Environment.objects.get(id=environment_id)
             except (Environment.DoesNotExist, ValidationError):
-                raise BadRequest(f"No environment found with id {environment_id}")
+                raise InvalidEnvironmentHeader(
+                    f"No environment found with id {environment_id}"
+                )
         elif team_id:
             try:
                 team_obj = Team.objects.get(id=team_id)
             except (Team.DoesNotExist, ValidationError):
-                raise BadRequest(f"No team found with id {team_id}")
+                raise InvalidTeamIDHeader(f"No team found with id {team_id}")
 
             try:
                 environment_obj = team_obj.environments.get(default=True)
             except Environment.DoesNotExist:
-                raise BadRequest(
+                raise MissingEnvironmentHeader(
                     f"No default environment for team {team_id}. "
                     "X-Environment-Id header is required."
                 )
         else:
-            raise BadRequest("X-Environment-Id or X-Team-Id header must be set")
+            raise MissingEnvironmentHeader(
+                "X-Environment-Id or X-Team-Id header must be set"
+            )
 
         return environment_obj
 

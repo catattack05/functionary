@@ -7,7 +7,6 @@ from rest_framework.views import APIView
 from builder.exceptions import InvalidPackage
 from builder.utils import extract_package_definition, initiate_build
 from core.api import HEADER_PARAMETERS
-from core.api.exceptions import BadRequest
 from core.api.mixins import EnvironmentViewMixin
 from core.api.permissions import HasEnvironmentPermissionForAction
 
@@ -50,16 +49,18 @@ class PublishView(APIView, EnvironmentViewMixin):
         environment = self.get_environment()
         package_contents_blob = request.FILES.get("package_contents").read()
 
+        # TO-DO: put invalid package yaml class here
         try:
             package_yaml = extract_package_definition(package_contents_blob)
-        except InvalidPackage as exc:
-            raise BadRequest(f"{exc}")
+        except InvalidPackage:
+            raise InvalidPackage("Could not extract package.yaml from package tarball")
 
         # If the package definition schema changes at any point, this would need to
         # identify the correct serializer based on the package_definition_version
         serializer = PackageDefinitionWithVersionSerializer(data=package_yaml)
+        # TO-DO: put invalid package yaml class here
         if not serializer.is_valid():
-            raise BadRequest(
+            raise InvalidPackage(
                 f"Invalid package.yaml. Encountered error: {serializer.errors}"
             )
         package_definition = serializer.validated_data["package"]
