@@ -8,12 +8,12 @@ def custom_exception_handler(exc, context):
     to response.
 
     Args:
-        -exc: the exception to handle
-        -context: dictionary containing any extra
-         context such as the view currently being handled
+        exc: the exception to handle
+        context: dictionary containing any extra context such as the view currently
+                 being handled
     Returns:
-        -The exception response with the additional error code.
-        Unhandled exceptions return None, resulting in a 500 error
+        The exception response with the additional error code.  Unhandled exceptions
+        return None, resulting in a 500 error.
     """
     response = exception_handler(exc, context)
     if response is not None:
