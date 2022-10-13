@@ -1,5 +1,3 @@
-import json
-
 import click
 import requests
 
@@ -18,7 +16,7 @@ def get(endpoint):
 
     """
     response = _send_request(endpoint, "get")
-    response_data = json.loads(response.text)
+    response_data = response.json()
 
     if "results" in response_data:
         return response_data["results"]
@@ -40,7 +38,7 @@ def post(endpoint, data=None, files=None):
 
     """
     response = _send_request(endpoint, "post", post_data=data, post_files=files)
-    return json.loads(response.text)
+    return response.json()
 
 
 def _400_error_handling(response):
@@ -54,7 +52,7 @@ def _400_error_handling(response):
         ClickException with user friendly message based on response
     """
     message = None
-    code = json.loads(response.text)["code"]
+    code = response.json()["code"]
 
     match code:
         case "missing_env_header":
@@ -70,9 +68,9 @@ def _400_error_handling(response):
         case "invalid_teamid_header":
             message = "Team ID is invalid."
         case "invalid_package":
-            message = f"{json.loads(response.text)['detail']}"
+            message = f"{response.json()['detail']}"
     if message is None:
-        message = f"{json.loads(response.text)['detail']}"
+        message = f"{response.json()['detail']}"
     raise click.ClickException(message)
 
 
