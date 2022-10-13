@@ -43,6 +43,39 @@ def post(endpoint, data=None, files=None):
     return json.loads(response.text)
 
 
+def _400_error_handling(response):
+    """
+    Helper function for _send_request that gives more user friendly
+    responses from 400 error codes
+
+    Args:
+        response: Python response object with 400 error
+    Raises:
+        ClickException with user friendly message based on response
+    """
+    message = None
+    code = json.loads(response.text)["code"]
+
+    match code:
+        case "missing_env_header":
+            message = (
+                "No environment selected. Please set environment id "
+                + "using 'functionary package environment set'."
+            )
+        case "invalid_env_header":
+            message = (
+                "Invalid environment provided. Please set environment "
+                + "using 'functionary package environment set'."
+            )
+        case "invalid_teamid_header":
+            message = "Team ID is invalid."
+        case "invalid_package":
+            message = f"{json.loads(response.text)['detail']}"
+    if message is None:
+        message = f"{json.loads(response.text)['detail']}"
+    raise click.ClickException(message)
+
+
 def _send_request(endpoint, request_type, post_data=None, post_files=None):
     """
     Helper function for get and post that sends the request and handles any errors
@@ -91,11 +124,7 @@ def _send_request(endpoint, request_type, post_data=None, post_files=None):
     if response.ok:
         return response
     elif response.status_code == 400:
-        # TODO: Add error codes checking in addition to status once they are added
-        # to the API
-        raise click.ClickException(
-            "Please set an active environment id using 'environment set'"
-        )
+        _400_error_handling(response)
     elif response.status_code == 401:
         raise click.ClickException("Authentication failed. Please login and try again.")
     elif response.status_code == 403:
