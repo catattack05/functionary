@@ -56,8 +56,8 @@ def _fix_datetime_display(value):
     Returns:
         value as a string representing datetime value without milliseconds
     """
-    value = datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ").replace(
-        tzinfo=datetime.timezone.utc, microsecond=0
+    value = datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f%z").replace(
+        microsecond=0
     )
     return value.strftime("%Y-%m-%d %H:%M:%S%Z")
 
@@ -85,7 +85,7 @@ def format_results(results, title="", excluded_fields=[]):
                 continue
             if first_row:
                 table.add_column(key.capitalize())
-            if "_at" in key:
+            if key.endswith("_at"):
                 value = _fix_datetime_display(value)
             row_data.append(str(value) if value else None)
         table.add_row(*row_data)
