@@ -56,9 +56,7 @@ def _fix_datetime_display(value):
     Returns:
         value as a string representing datetime value without milliseconds
     """
-    value = datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f%z").replace(
-        microsecond=0
-    )
+    value = datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f%z")
     return value.strftime("%Y-%m-%d %H:%M:%S%Z")
 
 
