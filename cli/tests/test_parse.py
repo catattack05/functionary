@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 import yaml
 from click.testing import CliRunner
@@ -6,37 +8,36 @@ from functionary.package import genschema
 
 
 @pytest.fixture(autouse=True)
-def py_package_yaml(tmp_path):
+def py_package_yaml(fakefs):
     """
     Pytest fixture to create package.yaml for tests
 
     Args:
-        tmp_path: pytest object that creates temp path for tests
+        fakefs: pytest fixture that holds test files
     Returns:
-        None, but does create package.yaml in tmp_path/sub
+        None, but does create package.yaml in fakefs/test
     """
-    d = tmp_path / "sub"
-    d.mkdir()
-    yaml_file = d / "package.yaml"
+    path = str(Path.home() / "parse-test" / "package.yaml")
+    fakefs.create_file(path)
     filedata = {
         "version": 1.0,
         "package": {"name": "test", "language": "python", "functions": []},
     }
-    with open(str(d) + "/package.yaml", "w") as yaml_file:
+    with open(str(path), "w") as yaml_file:
         yaml.dump(filedata, yaml_file, sort_keys=False)
 
 
-def _write_function_py_file(tmp_path, arg_str):
+def _write_function_py_file(fakefs, arg_str):
     """
     Helper function for tests that writes the python function file to test.
 
     Args:
-        tmp_path: pytest object that creates temp path for tests
-        py_package_yaml: the pytest fixture representing the yaml
+        fakefs: pytest fixture that holds test files
         arg_str: the arg we want to test
     Returns:
-        None, but does create functions.py with a function in tmp_path/sub
+        None, but does create functions.py with a function in fakefs/test
     """
+
     func = (
         "from datetime import date, datetime\n"
         + "def test("
@@ -46,191 +47,208 @@ def _write_function_py_file(tmp_path, arg_str):
         + "def test2():"
         + "    pass"
     )
-    func_file = tmp_path / "sub" / "functions.py"
-    func_file.write_text(func)
+    path = str(Path.home() / "parse-test" / "functions.py")
+    fakefs.create_file(path)
+
+    with open(path, "w") as file_:
+        file_.write(func)
 
 
-def _run_genschema(tmp_path):
+def _run_genschema(fakefs):
     """
     Helper function for tests that simulates the genschema command using
     CliRunner
 
     Args:
-        tmp_path: pytest object that points to where test files are stored
+        fakefs: pytest object that points to where test files are stored
 
     Returns:
         func_dict: Python list of dictionaries representing Python functions
     """
 
     runner = CliRunner()
-    runner.invoke(genschema, [str(tmp_path / "sub")])
+    runner.invoke(genschema, [str(Path.home() / "parse-test")])
 
-    with open(str(tmp_path / "sub") + "/package.yaml", "r") as yaml_file:
+    path = Path.home() / "parse-test" / "package.yaml"
+
+    with open(str(path), "r") as yaml_file:
         data = yaml.safe_load(yaml_file)
     return data
 
 
-"""
-Tests for the general function or yaml structure
-"""
-
-
-def test_parser_finds_function_name(tmp_path):
+def test_parser_finds_function_name(fakefs):
     """Parser should correctly detect multiple functions"""
     arg = ""
-    _write_function_py_file(tmp_path, arg)
-    func_dict = _run_genschema(tmp_path)
-    assert func_dict["package"]["functions"][0]["name"] == "test"
-    assert func_dict["package"]["functions"][1]["name"] == "test2"
+    _write_function_py_file(fakefs, arg)
+    dict = _run_genschema(fakefs)
+
+    functions = dict["package"]["functions"]
+
+    assert functions[0]["name"] == "test"
+    assert functions[1]["name"] == "test2"
 
 
-"""
-Tests to make sure parser can successfully handle each arg type within a function
-"""
+def test_correct_dict_parse(fakefs):
+    """Parser should auto-gen dict type"""
+    arg = "param: dict = {'a':'b'},"
+    _write_function_py_file(fakefs, arg)
+
+    func_dict = _run_genschema(fakefs)["package"]["functions"][0]
+    test_param = func_dict["parameters"][0]
+
+    assert test_param["name"] == "param"
+    assert test_param["type"] == "json"
+    assert test_param["required"] is False
 
 
-def test_correct_dict_parse(tmp_path):
-    """Parser should auto-gen dict type but not auto-gen dictionary defaults"""
-    arg = "dict: dict = {'a':'b'},"
-    _write_function_py_file(tmp_path, arg)
-    func_dict = _run_genschema(tmp_path)["package"]["functions"][0]
-
-    assert func_dict["parameters"][0]["name"] == "dict"
-    assert func_dict["parameters"][0]["type"] == "json"
-    assert "default" not in func_dict["parameters"][0].keys()
-    assert func_dict["parameters"][0]["required"] is False
-
-
-def test_correct_string_parse(tmp_path):
+def test_correct_string_parse(fakefs):
     """Parser should auto-gen str arg's type and default"""
-    arg = "str: str = '5',"
-    _write_function_py_file(tmp_path, arg)
-    func_dict = _run_genschema(tmp_path)["package"]["functions"][0]
+    arg = "param: str = '5',"
+    _write_function_py_file(fakefs, arg)
 
-    assert func_dict["parameters"][0]["name"] == "str"
-    assert func_dict["parameters"][0]["type"] == "string"
-    assert func_dict["parameters"][0]["required"] is False
-    assert func_dict["parameters"][0]["default"] == "5"
+    func_dict = _run_genschema(fakefs)["package"]["functions"][0]
+    test_param = func_dict["parameters"][0]
+
+    assert test_param["name"] == "param"
+    assert test_param["type"] == "string"
+    assert test_param["required"] is False
+    assert test_param["default"] == "5"
 
 
-def test_correct_int_parse(tmp_path):
+def test_correct_int_parse(fakefs):
     """Parser should auto-gen int arg's type and default"""
-    arg = "int: int = 5,"
-    _write_function_py_file(tmp_path, arg)
-    func_dict = _run_genschema(tmp_path)["package"]["functions"][0]
+    arg = "param: int = 5,"
+    _write_function_py_file(fakefs, arg)
 
-    assert func_dict["parameters"][0]["name"] == "int"
-    assert func_dict["parameters"][0]["type"] == "integer"
-    assert func_dict["parameters"][0]["required"] is False
-    assert func_dict["parameters"][0]["default"] == 5
+    func_dict = _run_genschema(fakefs)["package"]["functions"][0]
+    test_param = func_dict["parameters"][0]
+
+    assert test_param["name"] == "param"
+    assert test_param["type"] == "integer"
+    assert test_param["required"] is False
+    assert test_param["default"] == 5
 
 
-def test_correct_float_parse(tmp_path):
+def test_correct_float_parse(fakefs):
     """Parser should auto-gen float arg's type and default"""
-    arg = "float: float = 2.0"
-    _write_function_py_file(tmp_path, arg)
-    func_dict = _run_genschema(tmp_path)["package"]["functions"][0]
+    arg = "param: float = 2.0"
+    _write_function_py_file(fakefs, arg)
 
-    assert func_dict["parameters"][0]["name"] == "float"
-    assert func_dict["parameters"][0]["type"] == "float"
-    assert func_dict["parameters"][0]["required"] is False
-    assert func_dict["parameters"][0]["default"] == 2.0
+    func_dict = _run_genschema(fakefs)["package"]["functions"][0]
+    test_param = func_dict["parameters"][0]
+
+    assert test_param["name"] == "param"
+    assert test_param["type"] == "float"
+    assert test_param["required"] is False
+    assert test_param["default"] == 2.0
 
 
-def test_correct_bool_parse(tmp_path):
+def test_correct_bool_parse(fakefs):
     """Parser should auto-gen bool arg's type and default"""
-    arg = "bool: bool = True"
-    _write_function_py_file(tmp_path, arg)
-    func_dict = _run_genschema(tmp_path)["package"]["functions"][0]
+    arg = "param: bool = True"
+    _write_function_py_file(fakefs, arg)
 
-    assert func_dict["parameters"][0]["name"] == "bool"
-    assert func_dict["parameters"][0]["type"] == "boolean"
-    assert func_dict["parameters"][0]["required"] is False
-    assert func_dict["parameters"][0]["default"] == "True"
+    func_dict = _run_genschema(fakefs)["package"]["functions"][0]
+    test_param = func_dict["parameters"][0]
+
+    assert test_param["name"] == "param"
+    assert test_param["type"] == "boolean"
+    assert test_param["required"] is False
+    assert test_param["default"] == "True"
 
 
-def test_correct_date_parse(tmp_path):
+def test_correct_date_parse(fakefs):
     """Parser should auto-gen dat arg's type and default"""
-    arg = "date: date = date(11, 11, 11)"
-    _write_function_py_file(tmp_path, arg)
-    func_dict = _run_genschema(tmp_path)["package"]["functions"][0]
+    arg = "param: date = date(11, 11, 11)"
+    _write_function_py_file(fakefs, arg)
 
-    assert func_dict["parameters"][0]["name"] == "date"
-    assert func_dict["parameters"][0]["type"] == "date"
-    assert func_dict["parameters"][0]["required"] is False
-    assert func_dict["parameters"][0]["default"] == "0011-11-11"
+    func_dict = _run_genschema(fakefs)["package"]["functions"][0]
+    test_param = func_dict["parameters"][0]
+
+    assert test_param["name"] == "param"
+    assert test_param["type"] == "date"
+    assert test_param["required"] is False
+    assert test_param["default"] == "0011-11-11"
 
 
-def test_correct_datetime_parse(tmp_path):
+def test_correct_datetime_parse(fakefs):
     """Parser should auto-gen datetime arg's type and default"""
-    arg = "datetime: datetime = datetime(11, 11, 11)"
-    _write_function_py_file(tmp_path, arg)
-    func_dict = _run_genschema(tmp_path)["package"]["functions"][0]
+    arg = "param: datetime = datetime(11, 11, 11)"
+    _write_function_py_file(fakefs, arg)
 
-    assert func_dict["parameters"][0]["name"] == "datetime"
-    assert func_dict["parameters"][0]["type"] == "datetime"
-    assert func_dict["parameters"][0]["required"] is False
-    assert func_dict["parameters"][0]["default"] == "0011-11-11 00:00:00"
+    func_dict = _run_genschema(fakefs)["package"]["functions"][0]
+    test_param = func_dict["parameters"][0]
 
-
-"""
-Tests to make sure parser can successfully handle irregular args
-"""
+    assert test_param["name"] == "param"
+    assert test_param["type"] == "datetime"
+    assert test_param["required"] is False
+    assert test_param["default"] == "0011-11-11 00:00:00"
 
 
-def test_no_type_provided(tmp_path):
+def test_no_type_provided(fakefs):
     """
     Parser should not assign type or default if none given,
     but should still fill out the default if one exists
     """
-    arg = "no_def, no_def2 = 2"
-    _write_function_py_file(tmp_path, arg)
-    func_dict = _run_genschema(tmp_path)["package"]["functions"][0]
+    arg = "no_type, no_type_with_def = 2"
+    _write_function_py_file(fakefs, arg)
+    func_dict = _run_genschema(fakefs)["package"]["functions"][0]
 
-    assert func_dict["parameters"][0]["name"] == "no_def"
-    assert "type" not in func_dict["parameters"][0].keys()
-    assert "default" not in func_dict["parameters"][0].keys()
-    assert func_dict["parameters"][0]["required"] is True
+    test_param1 = func_dict["parameters"][0]
+    test_param2 = func_dict["parameters"][1]
 
-    assert func_dict["parameters"][1]["name"] == "no_def2"
-    assert "type" not in func_dict["parameters"][0].keys()
-    assert func_dict["parameters"][1]["default"] == 2
-    assert func_dict["parameters"][1]["required"] is False
+    assert test_param1["name"] == "no_type"
+    assert "type" not in test_param1.keys()
+    assert "default" not in test_param1.keys()
+    assert test_param1["required"] is True
+
+    assert test_param2["name"] == "no_type_with_def"
+    assert "type" not in test_param2.keys()
+    assert test_param2["default"] == 2
+    assert test_param2["required"] is False
 
 
-def test_unsupported_type_provided(tmp_path):
+def test_unsupported_type_provided(fakefs):
     """Parser should not assign type if it can read a type
     that isn't supported by functionary. However, if a default exists,
     'required' should still be false and the default should still be set.
     """
     arg = "invalid_type: test, invalid_type2: test = 2,"
-    _write_function_py_file(tmp_path, arg)
-    func_dict = _run_genschema(tmp_path)["package"]["functions"][0]
+    _write_function_py_file(fakefs, arg)
 
-    assert func_dict["parameters"][0]["name"] == "invalid_type"
-    assert "type" not in func_dict["parameters"][0].keys()
-    assert "default" not in func_dict["parameters"][0].keys()
-    assert func_dict["parameters"][0]["required"] is True
+    func_dict = _run_genschema(fakefs)["package"]["functions"][0]
+    test_param1 = func_dict["parameters"][0]
+    test_param2 = func_dict["parameters"][1]
 
-    assert "type" not in func_dict["parameters"][1].keys()
-    assert func_dict["parameters"][1]["required"] is False
-    assert func_dict["parameters"][1]["default"] == 2
+    assert test_param1["name"] == "invalid_type"
+    assert "type" not in test_param1.keys()
+    assert "default" not in test_param1.keys()
+    assert test_param1["required"] is True
+
+    assert test_param2["name"] == "invalid_type2"
+    assert "type" not in test_param2.keys()
+    assert test_param2["required"] is False
+    assert test_param2["default"] == 2
 
 
-def test_parser_cannot_parse_type_provided(tmp_path):
+def test_parser_cannot_parse_type_provided(fakefs):
     """Parser should not assign type if it cannot parse the type given.
     However, 'required' should still be set to 'False' and the default
     set if a a default exists.
     """
     arg = "unparsable_type: test(), unparsable_type2: test() = 2,"
-    _write_function_py_file(tmp_path, arg)
-    func_dict = _run_genschema(tmp_path)["package"]["functions"][0]
+    _write_function_py_file(fakefs, arg)
 
-    assert func_dict["parameters"][0]["name"] == "unparsable_type"
-    assert "type" not in func_dict["parameters"][0].keys()
-    assert "default" not in func_dict["parameters"][0].keys()
-    assert func_dict["parameters"][0]["required"] is True
+    func_dict = _run_genschema(fakefs)["package"]["functions"][0]
+    test_param1 = func_dict["parameters"][0]
+    test_param2 = func_dict["parameters"][1]
 
-    assert "type" not in func_dict["parameters"][1].keys()
-    assert func_dict["parameters"][1]["required"] is False
-    assert func_dict["parameters"][1]["default"] == 2
+    assert test_param1["name"] == "unparsable_type"
+    assert "type" not in test_param1.keys()
+    assert "default" not in test_param1.keys()
+    assert test_param1["required"] is True
+
+    assert test_param2["name"] == "unparsable_type2"
+    assert "type" not in test_param2.keys()
+    assert test_param2["required"] is False
+    assert test_param2["default"] == 2
