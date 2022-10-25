@@ -65,8 +65,6 @@ def _400_error_handling(response):
                 "Invalid environment provided. Please set environment "
                 + "using 'functionary package environment set'."
             )
-        case "invalid_teamid_header":
-            message = "Team ID is invalid."
         case "invalid_package":
             message = f"{response.json()['detail']}"
     if message is None:

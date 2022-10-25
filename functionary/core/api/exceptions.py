@@ -34,7 +34,7 @@ class MissingEnvironmentHeader(APIException):
     """Required environment header is missing"""
 
     status_code = 400
-    default_detail = "X-Environment-Id or X-Team-Id header must be set"
+    default_detail = "X-Environment-Id must be set"
     default_code = "missing_env_header"
 
 
@@ -42,13 +42,5 @@ class InvalidEnvironmentHeader(APIException):
     """Required environment header is present but invalid"""
 
     status_code = 400
-    default_detail = "X-Environment-Id or X-Team-Id header must be valid"
+    default_detail = "X-Environment-Id header must be valid"
     default_code = "invalid_env_header"
-
-
-class InvalidTeamIDHeader(APIException):
-    """Provided TeamID header is invalid"""
-
-    status_code = 400
-    default_detail = "Invalid X-Team-Id header must be set"
-    default_code = "invalid_teamid_header"

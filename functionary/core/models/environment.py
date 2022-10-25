@@ -17,8 +17,6 @@ class Environment(models.Model):
         id: unique identifier (UUID)
         name: the name of the environment
         team: the Team that this environment belongs to
-        default: when true, this environment will act as the default for a Team in
-                 cases where an environment is not specified.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -26,17 +24,11 @@ class Environment(models.Model):
     team = models.ForeignKey(
         to="Team", related_name="environments", on_delete=models.CASCADE, db_index=True
     )
-    default = models.BooleanField(default=False)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["team", "name"], name="team_name_unique_together"
-            ),
-            models.UniqueConstraint(
-                fields=["team", "default"],
-                condition=models.Q(default=True),
-                name="team_default_true_unique_together",
             ),
         ]
 
@@ -44,16 +36,17 @@ class Environment(models.Model):
         return f"{self.team.name} - {self.name}"
 
     @classmethod
-    def create_default(cls, team: "Team") -> "Environment":
+    def create_first_env(cls, team: "Team") -> "Environment":
         """Create a default environment for the provided Team
 
         Args:
-            team: Team to which the created environment will belong and be the default
+            team: Team to which the created environment will belong
 
         Returns:
             The created Environment
         """
-        environment = cls.objects.create(name="default", team=team, default=True)
+
+        environment = cls.objects.create(name="default", team=team)
         environment.save()
 
         return environment

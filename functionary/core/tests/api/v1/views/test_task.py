@@ -7,7 +7,7 @@ from core.models import Function, Package, Task, Team
 @pytest.fixture
 def environment():
     team = Team.objects.create(name="team")
-    return team.environments.get(default=True)
+    return team.environments.get()
 
 
 @pytest.fixture

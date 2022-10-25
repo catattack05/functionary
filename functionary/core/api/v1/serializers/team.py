@@ -10,7 +10,7 @@ class TeamEnvironmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Environment
-        fields = ["id", "name", "default"]
+        fields = ["id", "name"]
 
 
 class TeamSerializer(serializers.ModelSerializer):

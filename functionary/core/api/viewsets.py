@@ -11,8 +11,7 @@ from core.api.mixins import EnvironmentViewMixin
 class EnvironmentGenericViewSet(EnvironmentViewMixin, GenericViewSet):
     """This viewset is intended for use in place of GenericViewSets where access
     control and queryset filtering should be done based on the appropriate environment
-    for the request. The X-Environment-Id and X-Team-Id headers are to used to
-    determine the environment.
+    for the request. The X-Environment-Id is used to determine the environment.
 
     For model based ViewSets with a queryset, the queryset must be filterable by an
     environment, either directly or through another field on the model. If the
