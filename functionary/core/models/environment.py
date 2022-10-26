@@ -34,19 +34,3 @@ class Environment(models.Model):
 
     def __str__(self):
         return f"{self.team.name} - {self.name}"
-
-    @classmethod
-    def create_first_env(cls, team: "Team") -> "Environment":
-        """Create a default environment for the provided Team
-
-        Args:
-            team: Team to which the created environment will belong
-
-        Returns:
-            The created Environment
-        """
-
-        environment = cls.objects.create(name="default", team=team)
-        environment.save()
-
-        return environment

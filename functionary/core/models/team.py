@@ -24,4 +24,4 @@ class Team(ModelSaveHookMixin, models.Model):
     def post_create(self):
         """Post create hooks"""
         Environment = apps.get_model("core", "Environment")
-        Environment.create_first_env(self)
+        Environment.objects.create(name="default", team=self)

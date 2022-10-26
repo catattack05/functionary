@@ -3,19 +3,16 @@
   fields:
     name: prod
     team: 29f146e9-4fd0-4cd1-b02d-68c75679c144
-    default: false
 - model: core.environment
   pk: 3764e110-2e14-4ab6-a8be-ee7b5b6345d6
   fields:
     name: dev
     team: 29f146e9-4fd0-4cd1-b02d-68c75679c144
-    default: true
 - model: core.environment
   pk: 9b999837-9de0-451f-8875-d8da5936b271
   fields:
     name: default
     team: 87bce48d-529a-4578-bbea-fd96d1de91f4
-    default: true
 - model: core.team
   pk: 29f146e9-4fd0-4cd1-b02d-68c75679c144
   fields:
