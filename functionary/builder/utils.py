@@ -13,13 +13,14 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.db import transaction
 from django.template.loader import get_template
+from docker.errors import APIError, BuildError
 from pydantic import Field, Json, create_model
 
 from core.models import Environment, Function, Package, User
 
 from .celery import app
 from .exceptions import InvalidPackage
-from .models import Build, BuildResource
+from .models import Build, BuildLog, BuildResource
 
 logger = get_task_logger(__name__)
 logger.setLevel(getattr(logging, settings.LOG_LEVEL))
@@ -134,6 +135,9 @@ def build_package(build_id: UUID):
     image_name, dockerfile = build.resources.image_details
     full_image_name = f"{settings.REGISTRY}/{image_name}"
 
+    log = BuildLog.objects.create(build=build, log="")
+    log.save()
+
     if not package:
         with transaction.atomic():
             package = _create_package_from_definition(
@@ -141,6 +145,8 @@ def build_package(build_id: UUID):
             )
             build.package = package
             build.save()
+
+    exception = False
 
     try:
         # Need to validate the potentially new function schema, but
@@ -157,10 +163,24 @@ def build_package(build_id: UUID):
             forcerm=True,
             tag=full_image_name,
         )
-        docker_client.images.push(full_image_name)
-    except Exception:
+        push_result = docker_client.images.push(full_image_name)
+    except BuildError as exc:
+        error_info = [str(line) for line in exc.build_log]
+        log.log = (
+            "Docker BuildError: error occured during docker image build. Info:\n"
+            + "".join(error_info)
+        )
+        exception = True
+    except APIError:
+        log.log = (
+            "Docker APIError: Server returned error during docker image build or push."
+        )
+        exception = True
+
+    if exception:
         build.status = Build.ERROR
         build.save()
+        log.save()
         return
 
     with transaction.atomic():
@@ -171,6 +191,18 @@ def build_package(build_id: UUID):
         package.save()
         build.status = Build.COMPLETE
         build.save()
+
+        if isinstance(push_result, str):
+            push_log_str = push_result
+        else:
+            push_info = [str(item) for item in push_result]
+            push_log_str = "".join(push_info)
+
+        build_info = [str(item) for item in build_log]
+        build_log_str = "BUILD RESULT INFORMATION:\n " + "".join(build_info) + "\n"
+
+        log.log = build_log_str + "PUSH RESULT INFORMATION:\n" + push_log_str
+        log.save()
 
     logger.debug(f"Cleaning up remnants of build {build_id}")
     docker_client.images.remove(image.id)
