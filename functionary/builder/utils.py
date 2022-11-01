@@ -1,5 +1,6 @@
 import datetime
 import io
+import json
 import logging
 import os
 import shutil
@@ -106,6 +107,40 @@ def initiate_build(
     return build
 
 
+def _format_log_string(build_results, push_results):
+    """
+    Helper function to transform results of docker
+    push and docker build into more user friendly string.
+
+    Args:
+        build_results: itertools._tee object returned from docker build
+        push_results: generator object returned from docker push
+
+    Returns:
+        string with both build and push information in more readable format
+    """
+    build_str = ""
+    for line in build_results:
+        line_str = ""
+        for value in line.values():
+            line_str = line_str + str(value) + " "
+        build_str = build_str + line_str + "\n"
+
+    push_str = ""
+    for line in push_results:
+        dict_line = json.loads(line.decode("utf-8"))
+        if "status" in dict_line:
+            status = dict_line["status"]
+            if "id" in dict_line:
+                id = dict_line["id"]
+                line_str = f"{id}: {status}"
+            else:
+                line_str = status
+        push_str = push_str + " " + line_str + "\n"
+
+    return "BUILD RESULTS:\n" + build_str + "\nPUSH RESULTS:\n" + push_str
+
+
 @app.task
 def build_package(build_id: UUID):
     """Retrieve the resources for Build and use them to build and push the package
@@ -135,9 +170,6 @@ def build_package(build_id: UUID):
     image_name, dockerfile = build.resources.image_details
     full_image_name = f"{settings.REGISTRY}/{image_name}"
 
-    log = BuildLog.objects.create(build=build, log="")
-    log.save()
-
     if not package:
         with transaction.atomic():
             package = _create_package_from_definition(
@@ -145,8 +177,6 @@ def build_package(build_id: UUID):
             )
             build.package = package
             build.save()
-
-    exception = False
 
     try:
         # Need to validate the potentially new function schema, but
@@ -157,51 +187,31 @@ def build_package(build_id: UUID):
         _extract_package_contents(package_contents, workdir)
         _load_dockerfile_template(dockerfile, workdir)
 
-        image, build_log = docker_client.images.build(
-            path=workdir,
-            pull=True,
-            forcerm=True,
-            tag=full_image_name,
+        image, build_result = docker_client.images.build(
+            path=workdir, pull=True, forcerm=True, tag=full_image_name
         )
-        push_result = docker_client.images.push(full_image_name)
+        push_result = docker_client.images.push(full_image_name, stream=True)
+        build.status = Build.COMPLETE
     except BuildError as exc:
         error_info = [str(line) for line in exc.build_log]
-        log.log = (
-            "Docker BuildError: error occured during docker image build. Info:\n"
-            + "".join(error_info)
-        )
-        exception = True
-    except APIError:
-        log.log = (
-            "Docker APIError: Server returned error during docker image build or push."
-        )
-        exception = True
-
-    if exception:
+        build_log_message = "".join(error_info)
         build.status = Build.ERROR
-        build.save()
-        log.save()
-        return
+    except APIError as exc:
+        build_log_message = str(exc)
+        build.status = Build.ERROR
 
     with transaction.atomic():
         # Build has succeeded, save all the things now
-        for func in db_functions:
-            func.save()
-        package.image_name = image_name
-        package.save()
-        build.status = Build.COMPLETE
+        if build.status == Build.COMPLETE:
+            for func in db_functions:
+                func.save()
+            package.image_name = image_name
+            package.save()
+
+            build_log_message = _format_log_string(build_result, push_result)
+
+        log = BuildLog.objects.create(build=build, log=build_log_message)
         build.save()
-
-        if isinstance(push_result, str):
-            push_log_str = push_result
-        else:
-            push_info = [str(item) for item in push_result]
-            push_log_str = "".join(push_info)
-
-        build_info = [str(item) for item in build_log]
-        build_log_str = "BUILD RESULT INFORMATION:\n " + "".join(build_info) + "\n"
-
-        log.log = build_log_str + "PUSH RESULT INFORMATION:\n" + push_log_str
         log.save()
 
     logger.debug(f"Cleaning up remnants of build {build_id}")
