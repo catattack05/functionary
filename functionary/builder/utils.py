@@ -151,20 +151,6 @@ def _format_push_results(push_results):
     return push_str
 
 
-def _combine_logs(build_str, push_str):
-    """
-    Helper function for build_package to combine formatted
-    log result strings.
-
-    Args:
-        build_str: formatted build str results
-        push_str: formatted push str results
-    Returns:
-        string with the combined log results
-    """
-    return "BUILD RESULTS:\n" + build_str + "\nPUSH RESULTS:\n" + push_str
-
-
 @app.task
 def build_package(build_id: UUID):
     """Retrieve the resources for Build and use them to build and push the package
@@ -218,6 +204,7 @@ def build_package(build_id: UUID):
         push_result = docker_client.images.push(full_image_name, stream=True)
         build.status = Build.COMPLETE
         push_str = _format_push_results(push_result)
+        build_log_message = build_str + "\n" + push_str
     except BuildError as exc:
         build_log_message = _format_build_results(exc.build_log)
         build.status = Build.ERROR
@@ -232,8 +219,6 @@ def build_package(build_id: UUID):
                 func.save()
             package.image_name = image_name
             package.save()
-
-            build_log_message = _combine_logs(build_str, push_str)
 
         BuildLog.objects.create(build=build, log=build_log_message)
         build.save()
