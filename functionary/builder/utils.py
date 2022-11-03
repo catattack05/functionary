@@ -107,25 +107,36 @@ def initiate_build(
     return build
 
 
-def _format_log_string(build_results, push_results):
+def _format_build_results(build_results):
     """
-    Helper function to transform results of docker
-    push and docker build into more user friendly string.
+    Helper function for build_package to format build results
+    as a more readable string
 
     Args:
-        build_results: itertools._tee object returned from docker build
-        push_results: generator object returned from docker push
-
+        build_results: itertools._tee_ object returned from docker build
     Returns:
-        string with both build and push information in more readable format
+        build_str: string representation of build results
+
     """
     build_str = ""
     for line in build_results:
         line_str = ""
         for value in line.values():
-            line_str = line_str + str(value) + " "
-        build_str = build_str + line_str + "\n"
+            line_str = line_str + str(value)
+        build_str = build_str + " " + line_str
+    return build_str
 
+
+def _format_push_results(push_results):
+    """
+    Helper function for build_package to format push results
+    as a more readable string
+
+    Args:
+        push_results: generator object created from docker push
+    Returns:
+        push_str: string representation of push results
+    """
     push_str = ""
     for line in push_results:
         dict_line = json.loads(line.decode("utf-8"))
@@ -137,14 +148,27 @@ def _format_log_string(build_results, push_results):
             else:
                 line_str = status
         push_str = push_str + " " + line_str + "\n"
+    return push_str
 
+
+def _combine_logs(build_str, push_str):
+    """
+    Helper function for build_package to combine formatted
+    log result strings.
+
+    Args:
+        build_str: formatted build str results
+        push_str: formatted push str results
+    Returns:
+        string with the combined log results
+    """
     return "BUILD RESULTS:\n" + build_str + "\nPUSH RESULTS:\n" + push_str
 
 
 @app.task
 def build_package(build_id: UUID):
     """Retrieve the resources for Build and use them to build and push the package
-    docker image
+    docker image. Also creates BuildLog with build/push information.
 
     Args:
         build_id: ID of the build being executed
@@ -190,11 +214,12 @@ def build_package(build_id: UUID):
         image, build_result = docker_client.images.build(
             path=workdir, pull=True, forcerm=True, tag=full_image_name
         )
+        build_str = _format_build_results(build_result)
         push_result = docker_client.images.push(full_image_name, stream=True)
         build.status = Build.COMPLETE
+        push_str = _format_push_results(push_result)
     except BuildError as exc:
-        error_info = [str(line) for line in exc.build_log]
-        build_log_message = "".join(error_info)
+        build_log_message = _format_build_results(exc.build_log)
         build.status = Build.ERROR
     except APIError as exc:
         build_log_message = str(exc)
@@ -208,11 +233,10 @@ def build_package(build_id: UUID):
             package.image_name = image_name
             package.save()
 
-            build_log_message = _format_log_string(build_result, push_result)
+            build_log_message = _combine_logs(build_str, push_str)
 
-        log = BuildLog.objects.create(build=build, log=build_log_message)
+        BuildLog.objects.create(build=build, log=build_log_message)
         build.save()
-        log.save()
 
     logger.debug(f"Cleaning up remnants of build {build_id}")
     docker_client.images.remove(image.id)
