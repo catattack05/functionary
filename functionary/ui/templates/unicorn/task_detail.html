@@ -1,46 +1,63 @@
-{% load task_output %}
-{% if should_refresh %}
-    <div class="column" unicorn:model="task" unicorn:poll-5000="refresh_task">
-{% else %}
-    <div class="column">
-{% endif %}
-        <div class="block">
-            <h1 class="title is-1">
-                <span class="icon"><i class="fa fa-digital-tachograph"></i></span>
-                &nbsp;&nbsp;{{ task.function.name }}
-                &nbsp;&nbsp;<i class="is-size-5 fa fa-info"></i>&nbsp;<span class="is-size-5 has-text-weight-normal">{{ task.status }}</span>
-            </h1>
+<div class="column"
+     {% if should_refresh %} unicorn:model="task" unicorn:poll-5000="refresh_task"{% endif %}>
+    <div class="block">
+        <h1 class="title is-1">
+            <span class="icon"><i class="fa fa-digital-tachograph"></i></span>
+            &nbsp;&nbsp;{{ task.function.name }}
+            &nbsp;&nbsp;<i class="is-size-5 fa fa-info"></i>&nbsp;<span class="is-size-5 has-text-weight-normal">{{ task.status }}</span>
+        </h1>
+    </div>
+    <div class="column has-addons">
+        <div class="field">
+            <label class="label" for="users">
+                <i class="fa fa-user"></i>&nbsp;Creator:
+            </label>
+            <ul id="users">
+                <li class="block ml-4">
+                    <p>
+                        {{ task.creator.first_name }} {{ task.creator.last_name }} <span class="has-text-grey-light">({{ task.creator.username }})</span>
+                        at {{ task.created_at }}
+                    </p>
+                </li>
+            </ul>
         </div>
-        <div class="column has-addons">
-            <div class="field">
-                <label class="label">
-                    <i class="fa fa-building"></i>&nbsp;{{ task.environment.name }}
-                </label>
-                <label class="label" for="users">
-                    <i class="fa fa-user"></i>&nbsp;Creator:
-                </label>
-                <ul id="users">
-                    <li class="block ml-4">
-                        <p>
-                            {{ task.creator.first_name }} {{ task.creator.last_name }} <span class="has-text-grey-light">({{ task.creator.username }})</span>
-                            at {{ task.created_at }}
-                        </p>
-                    </li>
-                </ul>
+        <div class="field">
+            <label class="label" for="params">
+                <i class="fa fa-list"></i>&nbsp;Parameters:
+            </label>
+            <div id="params">
+                <pre class="block ml-4">{{ task.parameters | pprint }}</pre>
             </div>
-            <div class="field">
-                <label class="label" for="params">
-                    <i class="fa fa-list"></i>&nbsp;Parameters:
-                </label>
-                <div id="params">
-                    <pre class="block ml-4">{{ task.parameters | pprint }}</pre>
+        </div>
+        <div class="field">
+            <label class="label" for="result">
+                <i class="fa fa-clipboard-check"></i>&nbsp;Result:
+            </label>
+            {% if show_output_selector %}
+                <div class="tabs is-small is-toggle ml-4">
+                    <ul>
+                        <li {% if output_format != "table" %}class="is-active"{% endif %}>
+                            <a unicorn:click="display_raw">Raw</a>
+                        </li>
+                        <li {% if output_format == "table" %}class="is-active"{% endif %}>
+                            <a unicorn:click="display_table">Table</a>
+                        </li>
+                    </ul>
                 </div>
-            </div>
-            <div class="field">
-                <label class="label" for="result">
-                    <i class="fa fa-clipboard-check"></i>&nbsp;Result:
-                </label>
-                <div id="result" class="block ml-4">{% task_output task %}</div>
+            {% endif %}
+            <div id="result" class="block ml-4">
+                {% if not task_complete %}
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                {% elif task.result is None %}
+                    {% include "partials/output_none.html" %}
+                {% elif output_format == "json" %}
+                    {% include "partials/output_json.html" %}
+                {% elif output_format == "table" %}
+                    {% include "partials/output_table.html" %}
+                {% else %}
+                    {% include "partials/output_string.html" %}
+                {% endif %}
             </div>
         </div>
     </div>
+</div>

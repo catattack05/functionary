@@ -1,6 +1,0 @@
-<script data-task-result="{{result}}">
-    var parsed_result = JSON.parse(document.currentScript.dataset.taskResult)
-    var result_element = document.getElementById('result')
-    result_element.classList.add("json-container", "wrap-json")
-    result_element.innerHTML = prettyPrintJson.toHtml(parsed_result)
-</script>

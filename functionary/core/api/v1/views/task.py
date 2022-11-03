@@ -20,7 +20,7 @@ from core.api.v1.serializers import (
     TaskSerializer,
 )
 from core.api.viewsets import EnvironmentGenericViewSet
-from core.models import Task
+from core.models import Task, TaskResult
 
 
 @extend_schema_view(
@@ -92,10 +92,10 @@ class TaskViewSet(
     def result(self, request, pk=None):
         task = self.get_object()
 
-        try:
-            serializer = TaskResultSerializer(task.taskresult)
-        except ObjectDoesNotExist:
+        if not TaskResult.objects.filter(task=task).exists():
             raise NotFound(f"No result found for task {pk}.")
+
+        serializer = TaskResultSerializer(task)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 

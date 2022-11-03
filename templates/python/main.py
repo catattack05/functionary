@@ -18,6 +18,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    retVal = getattr(functions, args.function)(**json.loads(args.parameters))
+    result = getattr(functions, args.function)(**json.loads(args.parameters))
+    output = json.dumps(result, default=str)
 
-    print(f"==== Output From Command ====\n{str(retVal) if retVal else ''}")
+    print(f"==== Output From Command ====\n{output}")

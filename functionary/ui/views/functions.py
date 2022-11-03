@@ -57,7 +57,6 @@ def execute(request) -> HttpResponse:
                 creator=request.user,
                 function=func,
                 parameters=form.cleaned_data,
-                output_format=func.output_format,
                 return_type=func.return_type,
             )
 

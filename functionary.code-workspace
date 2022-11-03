@@ -17,6 +17,9 @@
     },
     {
       "path": "runner"
+    },
+    {
+      "path": "templates"
     }
   ],
   "settings": {
@@ -32,7 +35,8 @@
       "**/__pycache__": true,
       "**/.pytest_cache": true,
       "**/.coverage": true,
-      "**/*.sqlite3": true
+      "**/*.sqlite3": true,
+      "**/*.swp": true
     },
     "editor.formatOnSave": true,
     "markdownlint.config": {
@@ -94,6 +98,7 @@
   },
   "extensions": {
     "recommendations": [
+      "batisteo.vscode-django",
       "DavidAnson.vscode-markdownlint",
       "esbenp.prettier-vscode",
       "monosans.djlint",

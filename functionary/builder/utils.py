@@ -14,7 +14,7 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.db import transaction
 from django.template.loader import get_template
-from docker.errors import APIError, BuildError
+from docker.errors import APIError, BuildError, DockerException
 from pydantic import Field, Json, create_model
 
 from core.models import Environment, Function, Package, User
@@ -239,8 +239,12 @@ def build_package(build_id: UUID):
         build.save()
 
     logger.debug(f"Cleaning up remnants of build {build_id}")
-    docker_client.images.remove(image.id)
     shutil.rmtree(workdir)
+
+    try:
+        docker_client.images.remove(image.id)
+    except DockerException:
+        logger.warn(f"Unable to remove build image: {image.id}")
 
     logger.info(f"Build {build_id} COMPLETE")
 
@@ -301,8 +305,8 @@ def _create_functions_from_definition(definitions, package: Package):
         function_obj.display_name = function_def.get("display_name")
         function_obj.summary = function_def.get("summary")
         function_obj.return_type = function_def.get("return_type")
-        function_obj.output_format = function_def.get("output_format")
         function_obj.description = function_def.get("description")
+        function_obj.variables = function_def.get("variables")
         function_obj.schema = _generate_function_schema(
             name, function_def.get("parameters")
         )

@@ -17,4 +17,4 @@ const parameters = args[2] === "--parameters" ? args[3] : args[1]
 const retVal = functions[toCall].apply(null, [JSON.parse(parameters)])
 
 console.log("==== Output From Command ====")
-console.log(`${retVal ? retVal : ''}`)
+console.log(JSON.stringify(retVal))

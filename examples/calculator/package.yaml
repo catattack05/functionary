@@ -22,6 +22,7 @@ package:
     - name: add
       summary: Add two integers
       description: This function consumes two integers and outputs the sum.
+      return_type: integer
 
       # (required) Parameters that the function takes
       parameters:

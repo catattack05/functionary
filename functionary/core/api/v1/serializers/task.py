@@ -72,3 +72,17 @@ class TaskCreateResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = ["id"]
+
+
+class TaskResultSerializer(serializers.ModelSerializer):
+    """Basic serializer for the TaskResult model"""
+
+    # SerializerMethodField is used because the actual data type of the result varies
+    result = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Task
+        fields = ["result"]
+
+    def get_result(self, task: Task):
+        return task.result

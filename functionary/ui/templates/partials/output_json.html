@@ -1,0 +1,6 @@
+<div class="json-container wrap-json" id="json-result"></div>
+<script data-task-result="{{ task.raw_result }}">
+    var parsed_result = JSON.parse(document.currentScript.dataset.taskResult)
+    var result_element = document.getElementById('json-result')
+    result_element.innerHTML = prettyPrintJson.toHtml(parsed_result, {"quoteKeys": true})
+</script>

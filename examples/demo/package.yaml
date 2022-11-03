@@ -1,0 +1,45 @@
+version: 1.0
+package:
+  name: "demo"
+  display_name: Functionality Demo
+  summary: Provides functions that demo / test various available features
+  language: "python"
+  functions:
+    - name: output_json
+      summary: Demonstrates JSON output rendering
+      display_name: Output JSON
+      description:
+        'Takes in a JSON blob and then simply returns that to demonstrate how
+        the JSON rendering works in the UI. To see table rendering, the input
+        should be a list formatted something like: [ { "param1": "value1",
+        "param2": "value2" }, { "param1": "value3", "param2": "value4" } ]'
+      parameters:
+        - name: input
+          summary: The JSON blob to render
+          type: json
+          required: true
+      return_type: json
+    - name: output_text
+      summary: Demonstrates text output rendering
+      display_name: Output Text
+      description:
+        Takes in a string and then simply returns that to demonstrate how string
+        results rendering works in the UI. CSV formatted text will provide the
+        option to be rendered as a table.
+      parameters:
+        - name: input
+          summary: The text to render
+          type: text
+          required: true
+      return_type: string
+    - name: long_running_process
+      display_name: Long Running Process
+      summary: Simulate a long running process
+      description:
+        Sleeps for the specified duration to simulate a long running process
+      parameters:
+        - name: duration
+          summary: How long, in seconds, that the function should run for
+          type: integer
+          required: false
+          default: 60

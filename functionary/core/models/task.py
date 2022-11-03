@@ -1,6 +1,7 @@
 """ Task model """
 import uuid
-from typing import Optional
+from json import JSONDecodeError
+from typing import Optional, Union
 
 import jsonschema
 from django.conf import settings
@@ -47,7 +48,6 @@ class Task(ModelSaveHookMixin, models.Model):
     environment = models.ForeignKey(to="Environment", on_delete=models.CASCADE)
     parameters = models.JSONField(encoder=DjangoJSONEncoder)
     return_type = models.CharField(max_length=64, null=True)
-    output_format = models.CharField(max_length=64, null=True)
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=PENDING)
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -106,12 +106,22 @@ class Task(ModelSaveHookMixin, models.Model):
         publish_task.delay(self.id)
 
     @property
-    def result(self) -> Optional[str]:
+    def raw_result(self) -> Optional[str]:
         """Convenience property for accessing the result output"""
         try:
             return self.taskresult.result
         except ObjectDoesNotExist:
             return None
+
+    @property
+    def result(self) -> Optional[Union[bool, dict, float, int, list, str]]:
+        """Convenience property for accessing the result output loaded as JSON"""
+        try:
+            return self.taskresult.json
+        except ObjectDoesNotExist:
+            return None
+        except JSONDecodeError:
+            return self.taskresult.result
 
     @property
     def log(self) -> Optional[str]:

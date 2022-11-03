@@ -1,7 +1,17 @@
 """ Function model """
 import uuid
 
+from django.core.exceptions import ValidationError
 from django.db import models
+
+
+def list_of_strings(value):
+    if isinstance(value, list) and all(isinstance(item, str) for item in value):
+        return
+
+    raise ValidationError(
+        '"%(value)s" is not a list of strings', params={"value": value}
+    )
 
 
 class Function(models.Model):
@@ -14,6 +24,8 @@ class Function(models.Model):
         display_name: optional display name
         summary: short description of the function
         description: more details about the function
+        variables: list of variable names to set before execution
+        return_type: the type of the object being returned
         schema: the function's OpenAPI definition
     """
 
@@ -28,8 +40,10 @@ class Function(models.Model):
     display_name = models.CharField(max_length=64, null=True)
     summary = models.CharField(max_length=128, null=True)
     description = models.TextField(null=True)
+    variables = models.JSONField(
+        default=list, validators=[list_of_strings], blank=True, null=True
+    )
     return_type = models.CharField(max_length=64, null=True)
-    output_format = models.CharField(max_length=64, null=True)
     schema = models.JSONField()
 
     class Meta:

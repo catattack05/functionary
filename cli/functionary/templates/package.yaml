@@ -22,6 +22,8 @@ package:
 #      summary: string
 #      display_name: string
 #      description: string
+#      # (optional) data type of the functions return value
+#      return_type: string
 
 #      # (required) Parameters that the function takes
 #      parameters:

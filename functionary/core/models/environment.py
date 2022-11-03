@@ -29,3 +29,13 @@ class Environment(models.Model):
 
     def __str__(self):
         return f"{self.team.name} - {self.name}"
+
+    def variables(self):
+        """Retrieve the variables visible in this environment.
+
+        This will return all variables associated with this
+        Environment and add in any variables associated with the Team
+        that haven't been overridden.
+        """
+        env_vars = self.vars.all()
+        return env_vars | self.team.vars.exclude(name__in=env_vars.values("name"))

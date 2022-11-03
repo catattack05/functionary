@@ -8,3 +8,4 @@ from .task_result import TaskResult  # noqa
 from .team import Team  # noqa
 from .user import User  # noqa
 from .user_role import EnvironmentUserRole, TeamUserRole  # noqa
+from .variable import Variable  # noqa

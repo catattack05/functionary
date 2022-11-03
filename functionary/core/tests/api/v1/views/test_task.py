@@ -1,7 +1,9 @@
+import json
+
 import pytest
 from django.urls import reverse
 
-from core.models import Function, Package, Task, Team
+from core.models import Function, Package, Task, TaskResult, Team
 
 
 @pytest.fixture
@@ -24,6 +26,16 @@ def function(package):
     }
     return Function.objects.create(
         name="testfunction", package=package, schema=function_schema
+    )
+
+
+@pytest.fixture
+def task(function, admin_user):
+    return Task.objects.create(
+        function=function,
+        environment=function.package.environment,
+        parameters={"prop1": "value1"},
+        creator=admin_user,
     )
 
 
@@ -66,3 +78,50 @@ def test_create_returns_400_for_invalid_parameters(
 
     assert response.status_code == 400
     assert not Task.objects.filter(function=function).exists()
+
+
+def test_no_result_returns_404(admin_client, task, request_headers):
+    """The task result is returned as the correct type"""
+
+    url = f"{reverse('task-list')}{task.id}/result/"
+    response = admin_client.get(url, **request_headers)
+
+    assert response.status_code == 404
+
+
+def test_result_type_is_preserved(admin_client, task, request_headers):
+    """The task result is returned as the correct type"""
+    url = f"{reverse('task-list')}{task.id}/result/"
+
+    str_result = json.dumps("1234")
+    int_result = json.dumps(1234)
+    list_result = json.dumps([1, 2, 3, 4])
+    dict_result = json.dumps({"one": 1, "two": 2, "three": 3, "four": 4})
+    bool_result = json.dumps(True)
+
+    task_result = TaskResult.objects.create(task=task)
+
+    task_result.result = str_result
+    task_result.save()
+    response = admin_client.get(url, **request_headers)
+    assert type(response.data["result"]) is str
+
+    task_result.result = int_result
+    task_result.save()
+    response = admin_client.get(url, **request_headers)
+    assert type(response.data["result"]) is int
+
+    task_result.result = list_result
+    task_result.save()
+    response = admin_client.get(url, **request_headers)
+    assert type(response.data["result"]) is list
+
+    task_result.result = dict_result
+    task_result.save()
+    response = admin_client.get(url, **request_headers)
+    assert type(response.data["result"]) is dict
+
+    task_result.result = bool_result
+    task_result.save()
+    response = admin_client.get(url, **request_headers)
+    assert type(response.data["result"]) is bool
