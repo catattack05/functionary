@@ -113,18 +113,22 @@ def _format_build_results(build_results):
     as a more readable string
 
     Args:
-        build_results: itertools._tee_ object returned from docker build
+        build_results: iterator returned from docker build
     Returns:
-        build_str: string representation of build results
+        string representation of build log
 
     """
-    build_str = ""
+    log = ""
+
     for line in build_results:
         line_str = ""
+
         for value in line.values():
-            line_str = line_str + str(value)
-        build_str = build_str + " " + line_str
-    return build_str
+            line_str += str(value)
+
+        log += line_str
+
+    return log
 
 
 def _format_push_results(push_results):
@@ -135,20 +139,21 @@ def _format_push_results(push_results):
     Args:
         push_results: generator object created from docker push
     Returns:
-        push_str: string representation of push results
+        string representation of the push log
     """
-    push_str = ""
+    log = ""
+
     for line in push_results:
         dict_line = json.loads(line.decode("utf-8"))
-        if "status" in dict_line:
-            status = dict_line["status"]
-            if "id" in dict_line:
-                id = dict_line["id"]
+        if status := dict_line.get("status"):
+            if id := dict_line.get("id"):
                 line_str = f"{id}: {status}"
             else:
                 line_str = status
-        push_str = push_str + " " + line_str + "\n"
-    return push_str
+
+            log += line_str + "\n"
+
+    return log
 
 
 @app.task
@@ -161,8 +166,6 @@ def build_package(build_id: UUID):
     """
     docker_client = docker.from_env()
 
-    # TODO: Catch exceptions and record failures. Also, what happens to the image we
-    #       pushed? Should it be deleted?
     logger.info(f"Starting build {build_id}")
 
     workdir = f"{settings.BUILDER_WORKDIR_BASE}/{build_id}"
@@ -200,16 +203,21 @@ def build_package(build_id: UUID):
         image, build_result = docker_client.images.build(
             path=workdir, pull=True, forcerm=True, tag=full_image_name
         )
-        build_str = _format_build_results(build_result)
-        push_result = docker_client.images.push(full_image_name, stream=True)
+        build_log = _format_build_results(build_result)
         build.status = Build.COMPLETE
-        push_str = _format_push_results(push_result)
-        build_log_message = build_str + "\n" + push_str
-    except BuildError as exc:
-        build_log_message = _format_build_results(exc.build_log)
+    except (APIError, BuildError) as exc:
+        build_log = (
+            _format_build_results(exc.build_log)
+            if hasattr(exc, "build_log")
+            else str(exc)
+        )
         build.status = Build.ERROR
+
+    try:
+        push_result = docker_client.images.push(full_image_name, stream=True)
+        build_log += "\n" + _format_push_results(push_result)
     except APIError as exc:
-        build_log_message = str(exc)
+        build_log += "\n" + str(exc)
         build.status = Build.ERROR
 
     with transaction.atomic():
@@ -220,7 +228,7 @@ def build_package(build_id: UUID):
             package.image_name = image_name
             package.save()
 
-        BuildLog.objects.create(build=build, log=build_log_message)
+        BuildLog.objects.create(build=build, log=build_log)
         build.save()
 
     logger.debug(f"Cleaning up remnants of build {build_id}")
