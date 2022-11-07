@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+    <div>
+        {% for build in object_list %}
+            <div class="block">
+                <div class="card">
+                    <div class="card-content">
+                        <div class="media">
+                            <div class="media-left">
+                                <span class="icon is-large">
+                                    <i class="fa fa-2x fa-wrench"></i>
+                                </span>
+                            </div>
+                            <div class="media-content">
+                                <a href="{% url 'ui:build-detail' build.id %}">
+                                    <p class="title is-4">{{ build.id }}</p>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock content %}

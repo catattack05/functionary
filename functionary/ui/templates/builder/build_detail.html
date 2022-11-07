@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="column is-full">
+        <nav class="breadcrumb has-arrow-separator" aria-label="breadcrumbs">
+            <ul>
+                <li>
+                    <a href="{% url 'ui:build-list' %}">Build List</a>
+                </li>
+                <li class="is-active">
+                    <a href="#">{{ object.id }}</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <div class="column">
+        <div class="block">
+            <h1 class="title is-1">
+                <span class="icon"><i class="fa fa-wrench"></i></span>&nbsp;&nbsp;
+                {{ object.id }}
+            </h1>
+        </div>
+        <div class="column has-addons">
+            {% if object.created_at %}
+                <div class="field">
+                    <label class="label" for="desc">Created At:</label>
+                    <span class="ml-4">{{ object.created_at }}</span>
+                </div>
+            {% endif %}
+            {% if object.updated_at %}
+                <div class="field">
+                    <label class="label" for="desc">Updated At:</label>
+                    <span class="ml-4">{{ object.updated_at }}</span>
+                </div>
+            {% endif %}
+            {% if object.creator %}
+                <div class="field">
+                    <label class="label" for="desc">Creator:</label>
+                    <span class="ml-4">{{ object.creator }}</span>
+                </div>
+            {% endif %}
+            {% if object.status %}
+                <div class="field">
+                    <label class="label" for="desc">Status:</label>
+                    <span class="ml-4">{{ object.status }}</span>
+                </div>
+            {% endif %}
+            {% if object.environment %}
+                <div class="field">
+                    <label class="label" for="desc">Environment:</label>
+                    <span class="ml-4">{{ object.environment }}</span>
+                </div>
+            {% endif %}
+            {% if object.package %}
+                <div class="field">
+                    <label class="label" for="desc">Package:</label>
+                    <span class="ml-4">{{ object.package }}</span>
+                </div>
+            {% endif %}
+            {% if build_log.log %}
+                <div class="field">
+                    <label class="label" for="desc">Build Log:</label>
+                    <span class="ml-4">{{ build_log.log }}</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}

@@ -2,12 +2,22 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import include, path
 
-from .views import environments, functions, home, packages, tasks, teams
+from .views import builds, environments, functions, home, packages, tasks, teams
 
 app_name = "ui"
 
 urlpatterns = [
     path("", home.home, name="home"),
+    path(
+        "build_list/",
+        (builds.BuildListView.as_view()),
+        name="build-list",
+    ),
+    path(
+        "build/<uuid:pk>",
+        (builds.BuildDetailView.as_view()),
+        name="build-detail",
+    ),
     path(
         "environment_list/",
         (environments.EnvironmentListView.as_view()),
