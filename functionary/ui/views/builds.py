@@ -1,4 +1,6 @@
-from builder.models import Build, BuildLog
+from django.core.exceptions import ObjectDoesNotExist
+
+from builder.models import Build
 
 from .view_base import (
     PermissionedEnvironmentDetailView,
@@ -8,7 +10,7 @@ from .view_base import (
 
 class BuildListView(PermissionedEnvironmentListView):
     model = Build
-    order_by_fields = ["id"]
+    order_by_fields = ["created_at"]
 
 
 class BuildDetailView(PermissionedEnvironmentDetailView):
@@ -16,5 +18,8 @@ class BuildDetailView(PermissionedEnvironmentDetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["build_log"] = BuildLog.objects.filter(build=context["object"])[0]
+        try:
+            context["build_log"] = context["object"].buildlog
+        except ObjectDoesNotExist:
+            context["build_log"] = None
         return context

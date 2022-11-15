@@ -7,7 +7,7 @@
                     <a href="{% url 'ui:build-list' %}">Build List</a>
                 </li>
                 <li class="is-active">
-                    <a href="#">{{ object.id }}</a>
+                    <a href="#">{{ object.package }}</a>
                 </li>
             </ul>
         </nav>
@@ -16,7 +16,7 @@
         <div class="block">
             <h1 class="title is-1">
                 <span class="icon"><i class="fa fa-wrench"></i></span>&nbsp;&nbsp;
-                {{ object.id }}
+                {{ object.package }}
             </h1>
         </div>
         <div class="column has-addons">
@@ -44,22 +44,16 @@
                     <span class="ml-4">{{ object.status }}</span>
                 </div>
             {% endif %}
-            {% if object.environment %}
+            {% if object.id %}
                 <div class="field">
-                    <label class="label" for="desc">Environment:</label>
-                    <span class="ml-4">{{ object.environment }}</span>
-                </div>
-            {% endif %}
-            {% if object.package %}
-                <div class="field">
-                    <label class="label" for="desc">Package:</label>
-                    <span class="ml-4">{{ object.package }}</span>
+                    <label class="label" for="desc">Build Id:</label>
+                    <span class="ml-4">{{ object.id }}</span>
                 </div>
             {% endif %}
             {% if build_log.log %}
                 <div class="field">
                     <label class="label" for="desc">Build Log:</label>
-                    <span class="ml-4">{{ build_log.log }}</span>
+                    <pre class="ml-4">{{ build_log.log }}</pre>
                 </div>
             {% endif %}
         </div>
